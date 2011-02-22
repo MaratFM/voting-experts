@@ -1,6 +1,7 @@
 package edu.arizona.ve.api;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Vector;
 
 import edu.arizona.ve.corpus.Corpus;
@@ -57,7 +58,7 @@ public class AutoEngine {
 				"   MDL: " + NF.format(mdlBF) + 
 				"   % of Best: " + NF.format(percentOfBest));
 		
-		System.out.println("LATEX: ");
+		System.out.println("DL: " + NF.format(bestSegmentation.descriptionLength));
 		System.out.println("& " + NF.format(minBF) + " & " + NF.format(maxBF) + " & " + NF.format(meanBF) + 
 				   		" & " + NF.format(stdDev) + " & " + NF.format(mdlBF) + " & " + NF.format(percentOfBest) + " \\\\ \\hline");
 		
@@ -123,7 +124,7 @@ public class AutoEngine {
 				"   MDL: " + NF.format(mdlBF) + 
 				"   % of Best: " + NF.format(percentOfBest));
 		
-		System.out.println("LATEX: ");
+		System.out.println("DL: " + NF.format(bestSegmentation.descriptionLength));
 		System.out.println("& " + NF.format(minBF) + " & " + NF.format(maxBF) + " & " + NF.format(meanBF) + 
 				   		" & " + NF.format(stdDev) + " & " + NF.format(mdlBF) + " & " + NF.format(percentOfBest) + " \\\\ \\hline");
 		

@@ -16,8 +16,8 @@ public class AutoPtM {
 //		Corpus c = Corpus.autoLoad("caesar", "nocase");
 //		Corpus c = Corpus.autoLoad("orwell-short", CorpusType.LETTER, false);
 //		Corpus c = Corpus.autoLoad("br87", CorpusType.LETTER, true);
-//		Corpus c = Corpus.autoLoad("chinese-gw", CorpusType.LETTER, true);
-		Corpus c = Corpus.autoLoad("switchboard", CorpusType.LETTER, false);
+		Corpus c = Corpus.autoLoad("thai-novel-short", CorpusType.LETTER, true);
+//		Corpus c = Corpus.autoLoad("switchboard", CorpusType.LETTER, false);
 		
 		int maxLen = 8;
 		Trie f = Trie.buildTrie(c, maxLen+1);
@@ -44,6 +44,7 @@ public class AutoPtM {
 		}
 		
 		System.out.println("\n\n********************************************");
+		System.out.println("DL: " + NF.format(minDL));
 		Evaluator.evaluate(mdlSegmentation, c.getCutPoints()).printResults();
 		
 //		CorpusWriter.writeCorpus(c, ptm._cutPoints);

@@ -80,7 +80,7 @@ public class MDL {
 		totalCost += ((lexicon.size() - 1.0) / 2.0) * Stats.log(segments.size());
 
 		// This term is just a constant for any given corpus, so is not really needed
-//		totalCost += ((letterCounts.size() - 1.0) / 2.0) * Stats.log(_corpus.size());
+//		totalCost += ((letterCounts.size() - 1.0) / 2.0) * Stats.log(corpus.getCleanChars().size());
 		
 //		System.out.println(	"LEX: " + NF.format(lexiconCost) + 
 //				" CORP: " + NF.format(corpusCost) + 
@@ -95,7 +95,7 @@ public class MDL {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		Corpus c = Corpus.autoLoad("chinese-gw", CorpusType.LETTER, true);
+		Corpus c = Corpus.autoLoad("br87", CorpusType.LETTER, true);
 		System.out.println(NF.format(MDL.computeDescriptionLength(c, c.getCutPoints(), c.makeForwardTrie(1))));
 	}
 

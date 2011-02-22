@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.HashMap;
 import java.util.Vector;
 
 import javax.xml.parsers.SAXParser;
@@ -33,11 +33,11 @@ public class Trie {
 	
 	// Special members for root node
 	public int maxDepthSeen = 0;
-	private TreeMap<Integer,StatNode> statistics = null; 
+	private HashMap<Integer,StatNode> statistics = null; 
 	
 	// All nodes have these members
 	public List<String> prefix;
-	public TreeMap<String,Trie> children;
+	public HashMap<String,Trie> children;
 	
 	public double  freq;
 	public double  stdFreq;
@@ -53,7 +53,7 @@ public class Trie {
 
 	/** Creates a new instance of Trie */
 	public Trie() {
-		children = new TreeMap<String,Trie>();
+		children = new HashMap<String,Trie>();
 	}
 
 	/**
@@ -62,7 +62,7 @@ public class Trie {
 	 * Depth level traversal.
 	 */
 	public void generateStatistics() {
-		statistics = new TreeMap<Integer,StatNode>();
+		statistics = new HashMap<Integer,StatNode>();
 
 		for (int i = 1; i <= maxDepthSeen; ++i) {
 			statistics.put(new Integer(i), new StatNode());
@@ -180,7 +180,7 @@ public class Trie {
 		}
 	}
 
-	public void fillStatistics(TreeMap<Integer,StatNode> stats) {
+	public void fillStatistics(HashMap<Integer,StatNode> stats) {
 		calculateInternalEntropy();
 		calculateEntropy();
 		if (prefix != null && !prefix.isEmpty()) {
@@ -197,7 +197,7 @@ public class Trie {
 		}
 	}
 
-	public void standardize(TreeMap<Integer,StatNode> stats) {
+	public void standardize(HashMap<Integer,StatNode> stats) {
 		if (prefix != null && !prefix.isEmpty()) {
 			StatNode stat = (StatNode) stats.get(new Integer(prefix.size()));
 			stdFreq = (stat.stdDevFreq == 0) ? 0 : (freq - stat.meanFreq) / stat.stdDevFreq;
@@ -234,14 +234,14 @@ public class Trie {
 	 * @param sequence
 	 * @return
 	 */
-	public TreeMap<String,Trie> getChildren(List<String> sequence) {
+	public HashMap<String,Trie> getChildren(List<String> sequence) {
 		if (sequence == null || sequence.size() == 0) {
 			return children;
 		}
 
 		String child = sequence.get(0);
 		if (!children.containsKey(child))
-			return new TreeMap<String,Trie>();
+			return new HashMap<String,Trie>();
 
 		Trie t = children.get(child);
 		List<String> suffix = sequence.subList(1, sequence.size());
@@ -548,7 +548,7 @@ public class Trie {
 		HashMap<String,Integer> wordCounts = new HashMap<String,Integer>();
 		
 		// The sub-trie rooted at "*" - the "lexicon"
-		TreeMap<String, Trie> lexicon = t.getChildren(begin);
+		HashMap<String, Trie> lexicon = t.getChildren(begin);
 		
 		for (Trie subTrie : lexicon.values()) {
 			wordCounts.putAll(subTrie.getWords());
