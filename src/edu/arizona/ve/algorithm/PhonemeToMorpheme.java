@@ -104,7 +104,7 @@ public class PhonemeToMorpheme {
 		
 //		Corpus morph = Corpus.autoLoad("inuktitut-morph", "case");
 		
-		for (double threshold = 0.0; threshold < 1.0; threshold += 0.1) {
+		for (double threshold = 0.0; threshold < 1.0; threshold += 0.05) {
 			PhonemeToMorpheme ptm = new PhonemeToMorpheme(f, b, c, maxLen);
 			ptm.runAlgorithm(threshold);
 			

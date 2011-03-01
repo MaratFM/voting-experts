@@ -7,7 +7,6 @@ import edu.arizona.ve.algorithm.mbdp1.BrentSegmentation;
 import edu.arizona.ve.algorithm.mbdp1.Score;
 import edu.arizona.ve.algorithm.mbdp1.Segmentation;
 import edu.arizona.ve.algorithm.mbdp1.Word;
-import edu.arizona.ve.algorithm.mbdp1.WordTable;
 
 
 /**
@@ -64,13 +63,14 @@ public class MBDP1 {
 //		String corpus = "input/orwell-full-sen.txt";
 
 		// NEW
-		String corpus = "input/sent/brown-cmu.txt";
+//		String corpus = "input/sent/brown-cmu.txt";
+		String corpus = "input/letter/br87.txt";
 		
 		Segmentation seg = new BrentSegmentation();
 //		Segmentation seg = new HybridSegmentation();
 //		Segmentation seg = new VotingExpertSegmentation();
 		
-		seg.setWordTable(WordTable.fromFile("output/lexica/seed.lex"));
+//		seg.setWordTable(WordTable.fromFile("output/lexica/seed.lex"));
 		
 		BufferedReader in = new BufferedReader(new FileReader(corpus));
 		PrintStream out = new PrintStream("output/mdbp1-output.txt");
