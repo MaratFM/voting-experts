@@ -99,10 +99,10 @@ public class Engine {
 		
 		bidiSegmentation = null; // stop the printing of the bidi array, we're done with it
 		
-		boolean[] lastSegmentation = partialSegmentation.cutPoints;
+//		boolean[] lastSegmentation = partialSegmentation.cutPoints;
 		
 		int i = 1;
-		int cyclesAtLevel = 0;
+//		int cyclesAtLevel = 0;
 		for (int threshold = startThreshold - 1; threshold >= minThreshold; ) {
 			Corpus partialInputRest = new Corpus();
 			partialInputRest.naiveLoad("output/" + corpus.getName()  + "-partial-" + i + ".txt", corpus.getType());
@@ -128,7 +128,7 @@ public class Engine {
 //			} else {
 //				cyclesAtLevel++;
 //			}
-			lastSegmentation = partialSegmentation.cutPoints;
+//			lastSegmentation = partialSegmentation.cutPoints;
 		}
 		
 		//Trie.extractWords(forwardKnowledgeTrie);

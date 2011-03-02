@@ -1,7 +1,6 @@
 package edu.arizona.ve.api;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Vector;
 
 import edu.arizona.ve.corpus.Corpus;

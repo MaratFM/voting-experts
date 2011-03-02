@@ -67,7 +67,8 @@ public class ErrorAnalyzer {
 		int errorWindows = 0;
 		int zeroWindows = 0;
 		int multWindows = 0;
-		int veErrorWindows = 0, seErrorWindows = 0, feErrorWindows = 0, beErrorWindows = 0, ceErrorWindows = 0, cePrecisionWindows = 0, sePrecisionWindows = 0;
+//		int veErrorWindows = 0; 
+		int seErrorWindows = 0, feErrorWindows = 0, beErrorWindows = 0, ceErrorWindows = 0, cePrecisionWindows = 0, sePrecisionWindows = 0;
 		int bePrecisionWindows = 0;
 		int agreeWindows = 0;
 		int fePrecisionWindows = 0;

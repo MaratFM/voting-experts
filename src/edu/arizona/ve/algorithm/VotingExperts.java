@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.Vector;
 
 import edu.arizona.ve.corpus.Corpus;
 import edu.arizona.ve.experts.BackwardEntropyExpert;
@@ -19,8 +18,6 @@ import edu.arizona.ve.experts.MorphemeExpert;
 import edu.arizona.ve.experts.PhonemeToMorphemeExpert;
 import edu.arizona.ve.experts.SurprisalExpert;
 import edu.arizona.ve.trie.Trie;
-import edu.arizona.ve.util.NF;
-import edu.arizona.ve.util.Stats;
 
 /**
  * @author Daniel Hewlett

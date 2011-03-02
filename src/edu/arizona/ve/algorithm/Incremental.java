@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Vector;
 
 import edu.arizona.ve.algorithm.incremental.IncrementalAlgorithm;
-import edu.arizona.ve.algorithm.incremental.IncrementalBVE;
 import edu.arizona.ve.algorithm.incremental.IncrementalPtM;
 
 public class Incremental {
