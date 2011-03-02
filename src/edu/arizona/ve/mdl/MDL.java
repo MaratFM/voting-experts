@@ -1,31 +1,27 @@
 package edu.arizona.ve.mdl;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
-import java.util.Vector;
 
 import edu.arizona.ve.corpus.Corpus;
 import edu.arizona.ve.corpus.Corpus.CorpusType;
-import edu.arizona.ve.trie.Trie;
 import edu.arizona.ve.util.NF;
 import edu.arizona.ve.util.Stats;
 
 public class MDL {
 
-	public static double computeDescriptionLength(Corpus corpus, boolean[] cutPoints, Trie trie) {
-		Set<String> alphabet = trie.getChildren(new ArrayList<String>()).keySet();
+	public static double computeDescriptionLength(Corpus corpus, boolean[] cutPoints) {
+//		Set<String> alphabet = trie.getChildren(new ArrayList<String>()).keySet();
 		
 //		System.out.println("ALPHABET SIZE: " + alphabet.size());
 		
-		Vector<Double> charFreq = new Vector<Double>();
-		for (String s : alphabet) {
-			List<String> list = new Vector<String>();
-			list.add(s);
-			double freq = trie.getFreq(list);
-			charFreq.add(freq);
-		}
+//		Vector<Double> charFreq = new Vector<Double>();
+//		for (String s : alphabet) {
+//			List<String> list = new Vector<String>();
+//			list.add(s);
+//			double freq = trie.getFreq(list);
+//			charFreq.add(freq);
+//		}
 		
 		int totalWords = 0;
 		HashMap<List<String>,Integer> lexicon = new HashMap<List<String>,Integer>();
@@ -96,7 +92,7 @@ public class MDL {
 	 */
 	public static void main(String[] args) {
 		Corpus c = Corpus.autoLoad("br87", CorpusType.LETTER, true);
-		System.out.println(NF.format(MDL.computeDescriptionLength(c, c.getCutPoints(), c.makeForwardTrie(1))));
+		System.out.println(NF.format(MDL.computeDescriptionLength(c, c.getCutPoints())));
 	}
 
 }

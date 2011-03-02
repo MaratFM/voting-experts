@@ -31,7 +31,7 @@ public class AutoPtM {
 			ptm.runAlgorithm(threshold);
 			
 			boolean[] cutPoints = ptm.getCutPoints();
-			double dl = MDL.computeDescriptionLength(c, cutPoints, f);
+			double dl = MDL.computeDescriptionLength(c, cutPoints);
 			
 			if (dl < minDL) {
 				minDL = dl;

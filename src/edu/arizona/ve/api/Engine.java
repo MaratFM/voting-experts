@@ -208,7 +208,7 @@ public class Engine {
 	    Segmentation s = new Segmentation(windowSize, threshold);
 	    s.cutPoints = Utils.makeArray(ve.getCutPoints());
 	    s.localMax = useLocalMax;
-	    s.descriptionLength = MDL.computeDescriptionLength(corpus, s.cutPoints, forwardTrie);
+	    s.descriptionLength = MDL.computeDescriptionLength(corpus, s.cutPoints);
 
 	    forwardSegmentation = s;
 	    
@@ -222,7 +222,7 @@ public class Engine {
 	    Segmentation s = new Segmentation(windowSize, threshold);
 	    s.cutPoints = Utils.makeArray(ve.getCutPoints());
 	    s.localMax = useLocalMax;
-	    s.descriptionLength = MDL.computeDescriptionLength(corpus, s.cutPoints, forwardTrie);
+	    s.descriptionLength = MDL.computeDescriptionLength(corpus, s.cutPoints);
 
 	    backwardSegmentation = s;
 	    
@@ -245,7 +245,7 @@ public class Engine {
 			maxOff.threshold = t;
 			maxOff.localMax = false;
 			maxOff.cutPoints = Utils.makeArray(ve.getCutPoints());
-			maxOff.descriptionLength = MDL.computeDescriptionLength(corpus, maxOff.cutPoints, forwardTrie);
+			maxOff.descriptionLength = MDL.computeDescriptionLength(corpus, maxOff.cutPoints);
 			segmentations.add(maxOff);
 			
 			ve.makeCutPoints(ve.getCutPoints().size(), true);
@@ -255,7 +255,7 @@ public class Engine {
 			maxOn.threshold = t;
 			maxOn.localMax = true;
 			maxOn.cutPoints = Utils.makeArray(ve.getCutPoints());
-			maxOn.descriptionLength = MDL.computeDescriptionLength(corpus, maxOn.cutPoints, forwardTrie);
+			maxOn.descriptionLength = MDL.computeDescriptionLength(corpus, maxOn.cutPoints);
 			
 			segmentations.add(maxOn);
 		}
@@ -277,7 +277,7 @@ public class Engine {
 			maxOff.threshold = t;
 			maxOff.localMax = false;
 			maxOff.cutPoints = Utils.makeArray(ve.getCutPoints());
-			maxOff.descriptionLength = MDL.computeDescriptionLength(corpus, maxOff.cutPoints, forwardTrie);
+			maxOff.descriptionLength = MDL.computeDescriptionLength(corpus, maxOff.cutPoints);
 			segmentations.add(maxOff);
 			
 			// Local Max ON
@@ -288,7 +288,7 @@ public class Engine {
 			maxOn.threshold = t;
 			maxOn.localMax = true;
 			maxOn.cutPoints = Utils.makeArray(ve.getCutPoints());
-			maxOn.descriptionLength = MDL.computeDescriptionLength(corpus, maxOn.cutPoints, forwardTrie);
+			maxOn.descriptionLength = MDL.computeDescriptionLength(corpus, maxOn.cutPoints);
 			
 			segmentations.add(maxOn);
 		}
@@ -307,7 +307,7 @@ public class Engine {
 	    Segmentation s = new Segmentation(windowSize, threshold);
 	    s.cutPoints = Utils.makeArray(pve.getCutPoints());
 	    s.localMax = useLocalMax;
-	    s.descriptionLength = MDL.computeDescriptionLength(corpus, s.cutPoints, forwardTrie);
+	    s.descriptionLength = MDL.computeDescriptionLength(corpus, s.cutPoints);
 	    
 	    partialSegmentation = s;
 	    
@@ -328,7 +328,7 @@ public class Engine {
 		Segmentation s = new Segmentation(windowSize, threshold);
 	    s.cutPoints = Utils.makeArray(pve.getCutPoints());
 	    s.localMax = useLocalMax;
-	    s.descriptionLength = MDL.computeDescriptionLength(corpus, s.cutPoints, forwardTrie);
+	    s.descriptionLength = MDL.computeDescriptionLength(corpus, s.cutPoints);
 	    
 	    return s;
 	}	    
@@ -344,7 +344,7 @@ public class Engine {
 	    bidiSegmentation.direction = Direction.BiDirectional;
 	    bidiSegmentation.cutPoints = Utils.makeArray(ve.getCutPoints());
 	    bidiSegmentation.localMax = useLocalMax;
-	    bidiSegmentation.descriptionLength = MDL.computeDescriptionLength(corpus, bidiSegmentation.cutPoints, forwardTrie);
+	    bidiSegmentation.descriptionLength = MDL.computeDescriptionLength(corpus, bidiSegmentation.cutPoints);
 
 	    return bidiSegmentation;
 	}
@@ -359,7 +359,7 @@ public class Engine {
 	    bidiSegmentation.direction = Direction.BiDirectional;
 	    bidiSegmentation.cutPoints = Utils.makeArray(ve.getCutPoints());
 	    bidiSegmentation.localMax = useLocalMax;
-	    bidiSegmentation.descriptionLength = MDL.computeDescriptionLength(corpus, bidiSegmentation.cutPoints, forwardTrie);
+	    bidiSegmentation.descriptionLength = MDL.computeDescriptionLength(corpus, bidiSegmentation.cutPoints);
 
 	    return bidiSegmentation;
 	}

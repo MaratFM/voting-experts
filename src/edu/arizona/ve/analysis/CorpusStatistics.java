@@ -28,7 +28,7 @@ public class CorpusStatistics {
 		System.out.println("Length (Word):   " + words.size());
 		System.out.println("Unique Words:    " + lexicon.size());
 		System.out.println("DL:              " + NF.format(MDL.computeDescriptionLength(c, 
-															  c.getCutPoints(), c.makeForwardTrie(1))));
+															  c.getCutPoints())));
 		
 	}
 
