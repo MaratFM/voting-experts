@@ -24,8 +24,8 @@ public class IncrementalBVE implements IncrementalAlgorithm {
 	VotingExperts ve;
 	Trie fTrie, bTrie, kTrie;
 	int trieDepth;
-	int windowSize = 5; 
-	int threshold = 3;
+	int windowSize = 4; 
+	int threshold = 6;
 	int n = 0;
 	int wait = 0; // 500;
 	
@@ -47,7 +47,7 @@ public class IncrementalBVE implements IncrementalAlgorithm {
 		ve.addExpert(new SurprisalExpert(fTrie), 1);
 		ve.addExpert(new ForwardEntropyExpert(fTrie), 1);
 		ve.addExpert(new BackwardEntropyExpert(bTrie), 1);
-		ve.addExpert(new KnowledgeExpert(kTrie), 2);
+		ve.addExpert(new KnowledgeExpert(kTrie), 3);
 		
 		ve.runAlgorithm(false);
 		

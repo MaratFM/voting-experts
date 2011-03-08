@@ -25,7 +25,8 @@ public class Incremental {
 	public static void main(String[] args) throws Exception {
 //		String corpus = "input/brent-corpus.txt";
 //		String corpus = "input/CHILDES/brent-data-brent.txt";
-		String corpus = "input/letter/br87.txt";
+//		String corpus = "input/letter/br87.txt";
+		String corpus = "input/letter/br87-cmu-sent.txt";
 
 		// TODO: Add parameters to the constructors
 		IncrementalAlgorithm exp = new IncrementalPtM();

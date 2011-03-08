@@ -18,8 +18,8 @@ import edu.arizona.ve.util.Utils;
 public class IncrementalVE implements IncrementalAlgorithm {
 	Trie fTrie, bTrie;
 	int trieDepth;
-	int windowSize = 5;
-	int threshold = 2;
+	int windowSize = 4;
+	int threshold = 3;
 	int n = 0;
 	int wait = 0; // who cares for VE? This would only matter for BVE
 	

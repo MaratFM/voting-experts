@@ -56,15 +56,10 @@ public class MBDP1 {
 	public static void main(String[] args) throws Exception {
 		int trainSize = 0, n = 0;
 
-		// OLD
-//		String corpus = "input/CHILDES/brent-data-brent.txt";
-//		String corpus = "input/brent-corpus.txt";
-//		String corpus = "input/orwell-sen.txt";
-//		String corpus = "input/orwell-full-sen.txt";
-
 		// NEW
 //		String corpus = "input/sent/brown-cmu.txt";
-		String corpus = "input/letter/br87.txt";
+//		String corpus = "input/letter/br87.txt";
+		String corpus = "input/letter/br87-cmu-sent.txt";
 		
 		Segmentation seg = new BrentSegmentation();
 //		Segmentation seg = new HybridSegmentation();
