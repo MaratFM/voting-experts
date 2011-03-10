@@ -16,10 +16,10 @@ import edu.arizona.ve.util.Stats;
 /**
 *
 * @author  Anh Tran
-* Unsupervised Word Segmentation algorithm with Branching Entropy & MDL
+* Unsupervised Word Segmentation algorithm using Branching Entropy & MDL
 * by Zhikov, Takamua, and Okumura (2010).
 */
-public class TwoPartBranchingEntropy {
+public class EntropyMDL {
 
 	Trie _forwardTrie, _backwardTrie;
 	Corpus _corpus;
@@ -30,7 +30,7 @@ public class TwoPartBranchingEntropy {
 	Model _model;
 	
 
-	public TwoPartBranchingEntropy(Corpus corpus, int maxLen) {
+	public EntropyMDL(Corpus corpus, int maxLen) {
 		// Init class variables
 		_corpus = corpus;
 		_maxLen = maxLen;
@@ -47,18 +47,20 @@ public class TwoPartBranchingEntropy {
 		
 		// Generate initial hypothesis
 		_initialCutpoints = new boolean[_branchEntropy.length];
-		algorithm1(_corpus, _branchEntropy, _initialCutpoints);
+		double mdl = algorithm1(_corpus, _branchEntropy, _initialCutpoints);
 
 		Evaluator.evaluate(_initialCutpoints, _corpus.getCutPoints()).printResults();
+		System.out.println(mdl);
 		System.out.println(Arrays.toString(Arrays.copyOf(_branchEntropy, 100)));
 		System.out.println(_corpus.getCleanChars().subList(0, 100));
 		System.out.println(Arrays.toString(Arrays.copyOf(_initialCutpoints, 100)));
 
 		// Compress local token co-occurences
 		_model = new Model(_corpus, _initialCutpoints);
-		algorithm2(_model, _branchEntropy);
+		mdl = algorithm2(_model, _branchEntropy);
 
 		Evaluator.evaluate(_model.cutPoints, _corpus.getCutPoints()).printResults();
+		System.out.println(mdl);
 		System.out.println(_corpus.getCleanChars().subList(0, 100));
 		System.out.println(Arrays.toString(Arrays.copyOf(_model.cutPoints, 100)));
 	}
@@ -263,7 +265,7 @@ public class TwoPartBranchingEntropy {
 		Corpus c = Corpus.autoLoad("br87", CorpusType.LETTER, true);
 		int maxLen = 3;
 		
-		TwoPartBranchingEntropy tpbe = new TwoPartBranchingEntropy(c, maxLen);
+		EntropyMDL tpbe = new EntropyMDL(c, maxLen);
 		tpbe.runAlgorithm();
 	}
 	
