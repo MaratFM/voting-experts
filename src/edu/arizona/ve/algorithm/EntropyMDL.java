@@ -3,8 +3,11 @@ package edu.arizona.ve.algorithm;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
+import edu.arizona.ve.algorithm.EntropyMDL.SimulationResult.SimulationType;
 import edu.arizona.ve.corpus.Corpus;
 import edu.arizona.ve.corpus.Corpus.CorpusType;
 import edu.arizona.ve.evaluation.Evaluator;
@@ -94,9 +97,9 @@ public class EntropyMDL {
 		
 		int pos, counter = 0;
 		boolean change = false;
-		double[] T;
 		double tempDL = 0;
 		List<String> leftToken, rightToken, longToken;
+		SimulationResult sim;
 		while (true) {
 			counter++;
 			change = false;
@@ -107,11 +110,11 @@ public class EntropyMDL {
 					rightToken = model.getRightToken(pos);
 					longToken = new ArrayList<String>(leftToken);
 					longToken.addAll(rightToken);
-					T = model.simulateLocalSplit(leftToken, rightToken, longToken);
-					tempDL = T[0]+T[1]+T[2]+T[3]+T[4];
+					sim = model.simulateLocalSplit(pos, leftToken, rightToken, longToken);
+					tempDL = sim.getMDL();
 					if (tempDL < mdl){
 						change = true;
-						model.acceptLocalSplit(pos, leftToken, rightToken, longToken, T);
+						model.acceptSimulationResult(sim);
 						mdl = model.getMDL();
 						
 //						System.out.println(mdl);
@@ -127,11 +130,11 @@ public class EntropyMDL {
 					rightToken = model.getRightToken(pos);
 					longToken = new ArrayList<String>(leftToken);
 					longToken.addAll(rightToken);
-					T = model.simulateLocalMerge(leftToken, rightToken, longToken);
-					tempDL = T[0]+T[1]+T[2]+T[3]+T[4];
+					sim = model.simulateLocalMerge(pos, leftToken, rightToken, longToken);
+					tempDL = sim.getMDL();
 					if (tempDL < mdl){
 						change = true;
-						model.acceptLocalMerge(pos, leftToken, rightToken, longToken, T);
+						model.acceptSimulationResult(sim);
 						mdl = model.getMDL();
 						
 //						System.out.println(mdl);
@@ -270,7 +273,7 @@ public class EntropyMDL {
 	}
 	
 	
-	private class BranchEntropy implements Comparable<BranchEntropy> {
+	public static class BranchEntropy implements Comparable<BranchEntropy> {
 		public double h;
 		public int pos;
 		
@@ -292,9 +295,65 @@ public class EntropyMDL {
 	    	return NF.format(h);
 	    }
 	}
+	
+	
+	public static class SimulationResult {
+		
+		public SimulationType type;
+		public HashMap<List<String>,Integer> lexiconMod;
+		HashMap<String,Integer> lettersMod;
+		public List<Integer> pos;
+		public double[] T;
+		public int accumulatedLetters;
+		public int accumulatedWords;
+		public int lexiconSize;
+		public int ops;
+		
+		public enum SimulationType {
+			LOCAL_SPLIT,
+			LOCAL_MERGE,
+			GLOBAL_SPLIT,
+			GLOBAL_MERGE
+		};
+		
+		public SimulationResult(SimulationType t, Model initModel) {
+			type = t;
+			lexiconMod = new HashMap<List<String>, Integer>();
+			lettersMod = new HashMap<String, Integer>();
+			pos = new ArrayList<Integer>();
+			T = new double[5];
+			T[0] = initModel.T[0];
+			T[1] = initModel.T[1];
+			T[2] = initModel.T[2];
+			T[3] = initModel.T[3];
+			T[4] = initModel.T[4];
+			accumulatedLetters = initModel.accumulatedLetters;
+			accumulatedWords = initModel.accumulatedWords;
+			lexiconSize = initModel.lexicon.size();
+			ops = 0;
+		}
+		
+		public void incrementWord(List<String> word) {
+			if (lexiconMod.containsKey(word))
+				lexiconMod.put(word, lexiconMod.get(word)+1);
+			else
+				lexiconMod.put(word, 1);
+		}
+		
+		public void decrementWord(List<String> word) {
+			if (lexiconMod.containsKey(word))
+				lexiconMod.put(word, lexiconMod.get(word)-1);
+			else
+				lexiconMod.put(word, -1);
+		}
+		
+		public double getMDL() {
+			return T[0] + T[1] + T[2] + T[3] + T[4];
+		}
+	}
 
 	
-	private class Model {
+	public static class Model {
 		
 		public Corpus corpus;
 		public boolean[] cutPoints;
@@ -302,7 +361,7 @@ public class EntropyMDL {
 		public int accumulatedWords;
 		public HashMap<String, Integer> letters;
 		public int accumulatedLetters;
-		public double T1, T2, T3, T4, T5;
+		public double[] T;
 		
 		public Model(Corpus c, boolean[] cuts) {
 			this.corpus = c;
@@ -319,21 +378,22 @@ public class EntropyMDL {
 			}
 			
 			// Calculate MDL components
+			T = new double[5];
 			calculateMDL();
 		}
 		
 		public double calculateMDL() {
-			this.T1 = 0;
+			this.T[0] = 0;
 			for (List<String> word : this.lexicon.keySet()) {
-				this.T1 -= this.lexicon.get(word) * Stats.log(this.lexicon.get(word));
+				this.T[0] -= this.lexicon.get(word) * Stats.log(this.lexicon.get(word));
 			}
-			this.T2 = this.accumulatedWords * Stats.log(this.accumulatedWords);
-			this.T3 = 0;
+			this.T[1] = this.accumulatedWords * Stats.log(this.accumulatedWords);
+			this.T[2] = 0;
 			for (String letter : this.letters.keySet()) {
-				this.T3 -= this.letters.get(letter) * Stats.log(this.letters.get(letter));
+				this.T[2] -= this.letters.get(letter) * Stats.log(this.letters.get(letter));
 			}
-			this.T4 = this.accumulatedLetters * Stats.log(this.accumulatedLetters);
-			this.T5 = ((this.lexicon.size() - 1.0) / 2.0) * Stats.log(this.accumulatedWords);
+			this.T[3] = this.accumulatedLetters * Stats.log(this.accumulatedLetters);
+			this.T[4] = ((this.lexicon.size() - 1.0) / 2.0) * Stats.log(this.accumulatedWords);
 			return getMDL();
 		}
 
@@ -371,147 +431,147 @@ public class EntropyMDL {
 			this.accumulatedWords -= 1;
 		}
 		
-		public double[] simulateMDLUpdates(HashMap<List<String>,Integer> lexiconMod) {
-			double t1 = T1, t2 = T2, t3 = T3, t4 = T4, t5 = T5;
-			int aLetters = accumulatedLetters, aWords = accumulatedWords;
-			int lexSize = lexicon.size();
-			HashMap<String,Integer> lettersMod = new HashMap<String, Integer>();
+		public void simulateLexiconModification(SimulationResult sim) {
 			
 			// Update t1
 			int wCount;
-			for (List<String> w : lexiconMod.keySet()) {
-				aWords += lexiconMod.get(w);
+			for (List<String> w : sim.lexiconMod.keySet()) {
+				sim.accumulatedWords += sim.lexiconMod.get(w);
 				if (lexicon.containsKey(w)) {
 					wCount = lexicon.get(w);
-					t1 += wCount * Stats.log(wCount);
-					wCount += lexiconMod.get(w);
-					t1 -= wCount * Stats.log(wCount);
+					sim.T[0] += wCount * Stats.log(wCount);
+					wCount += sim.lexiconMod.get(w);
+					sim.T[0] -= wCount * Stats.log(wCount);
 					assert(wCount >= 0);
 					if (wCount == 0) {
 						// Simulate removing a word from the lexicon
-						lexSize--;
+						sim.lexiconSize--;
 						for (String letter : w) {
-							if (lettersMod.containsKey(letter)) {
-								lettersMod.put(letter, lettersMod.get(letter)-1);
+							if (sim.lettersMod.containsKey(letter)) {
+								sim.lettersMod.put(letter, sim.lettersMod.get(letter)-1);
 							} else {
-								lettersMod.put(letter, -1);
+								sim.lettersMod.put(letter, -1);
 							}
 						}
 					}
 				} else {
-					wCount = lexiconMod.get(w);
+					wCount = sim.lexiconMod.get(w);
 					assert(wCount > 0);
-					t1 -= wCount * Stats.log(wCount);
+					sim.T[0] -= wCount * Stats.log(wCount);
 					
 					// Simulate adding a word to the lexicon
-					lexSize++;
+					sim.lexiconSize++;
 					for (String letter : w) {
-						if (lettersMod.containsKey(letter)) {
-							lettersMod.put(letter, lettersMod.get(letter)+1);
+						if (sim.lettersMod.containsKey(letter)) {
+							sim.lettersMod.put(letter, sim.lettersMod.get(letter)+1);
 						} else {
-							lettersMod.put(letter, 1);
+							sim.lettersMod.put(letter, 1);
 						}
 					}
 				}
 			}
 			
 			// Update t2
-			t2 = aWords * Stats.log(aWords);
+			sim.T[1] = sim.accumulatedWords * Stats.log(sim.accumulatedWords);
 			
 			// Update t3
 			int lCount;
-			for (String l : lettersMod.keySet()) {
-				aLetters += lettersMod.get(l);
+			for (String l : sim.lettersMod.keySet()) {
+				sim.accumulatedLetters += sim.lettersMod.get(l);
 				if (letters.containsKey(l)) {
 					lCount = letters.get(l);
-					t3 += lCount * Stats.log(lCount);
+					sim.T[2] += lCount * Stats.log(lCount);
 				} else {
 					lCount = 0;
 				}
-				lCount += lettersMod.get(l);
-				t3 -= lCount * Stats.log(lCount);
+				lCount += sim.lettersMod.get(l);
+				sim.T[2] -= lCount * Stats.log(lCount);
 				assert(lCount >= 0);
 			}
 			
 			// Update t4
-			t4 = aLetters * Stats.log(aLetters);
+			sim.T[3] = sim.accumulatedLetters * Stats.log(sim.accumulatedLetters);
 
 			// Update t5
-			t5 = 0.5 * (lexSize - 1) * Stats.log(aWords);
-			
-			return new double[] {t1, t2, t3, t4, t5};
+			sim.T[4] = 0.5 * (sim.lexiconSize - 1) * Stats.log(sim.accumulatedWords);
 		}
 
-		public double[] simulateLocalSplit(List<String> leftToken, List<String> rightToken,List<String> longToken) {
+		public SimulationResult simulateLocalSplit(int pos, List<String> leftToken,
+				List<String> rightToken,List<String> longToken) {
 			assert(leftToken != longToken && rightToken != longToken);
-			HashMap<List<String>,Integer> lexiconMod = new HashMap<List<String>, Integer>();
+			
+			// Create new simulation
+			SimulationResult sim = new SimulationResult(SimulationType.LOCAL_SPLIT, this);
 			
 			// Decrement long token
-			lexiconMod.put(longToken, -1);
+			sim.decrementWord(longToken);
 			
 			// Increment left & right tokens
-			if (lexiconMod.containsKey(leftToken))
-				lexiconMod.put(leftToken, lexiconMod.get(leftToken)+1);
-			else
-				lexiconMod.put(leftToken, 1);
-			if (lexiconMod.containsKey(rightToken))
-				lexiconMod.put(rightToken, lexiconMod.get(rightToken)+1);
-			else
-				lexiconMod.put(rightToken, 1);
+			sim.incrementWord(leftToken);
+			sim.incrementWord(rightToken);
 			
-			return simulateMDLUpdates(lexiconMod);
+			// Add split possition
+			sim.pos.add(pos);
+			sim.ops++;			// track of number of operations for sanity check
+			
+			simulateLexiconModification(sim);
+			
+			return sim;
 		}
 		
-		public double[] simulateLocalMerge(List<String> leftToken, List<String> rightToken, List<String> longToken) {
+		public SimulationResult simulateLocalMerge(int pos, List<String> leftToken,
+				List<String> rightToken, List<String> longToken) {
 			assert(leftToken != longToken && rightToken != longToken);
-			HashMap<List<String>,Integer> lexiconMod = new HashMap<List<String>, Integer>();
+
+			// Create new simulation
+			SimulationResult sim = new SimulationResult(SimulationType.LOCAL_MERGE, this);
 			
 			// Increment long token
-			lexiconMod.put(longToken, 1);
+			sim.incrementWord(longToken);
 			
 			// Decrement left & right tokens
-			if (lexiconMod.containsKey(leftToken))
-				lexiconMod.put(leftToken, lexiconMod.get(leftToken)-1);
-			else
-				lexiconMod.put(leftToken, -1);
-			if (lexiconMod.containsKey(rightToken))
-				lexiconMod.put(rightToken, lexiconMod.get(rightToken)-1);
-			else
-				lexiconMod.put(rightToken, -1);
+			sim.decrementWord(leftToken);
+			sim.decrementWord(rightToken);
+
+			// Add merge possition
+			sim.pos.add(pos);
+			sim.ops++;				// track of number of operations for sanity check
 			
-			return simulateMDLUpdates(lexiconMod);
+			simulateLexiconModification(sim);
+			
+			return sim;
 		}
 		
-		public void acceptLocalSplit(int pos, List<String> leftToken,
-				List<String> rightToken, List<String> longToken, double[] Ts) {
-
-			cutPoints[pos] = true;
+		public void acceptSimulationResult(SimulationResult sim) {
 			
-			// Decrement the long token to be split
-			removeWord(longToken);
+			if (sim.type == SimulationType.GLOBAL_SPLIT) {
+				// Need to actually find the split points on global split
+			}
 			
-			// Increment the two new sub-tokens
-			addWord(leftToken);
-			addWord(rightToken);
-
-			// Accept updates
-			T1 = Ts[0]; T2 = Ts[1]; T3 = Ts[2]; T4 = Ts[3]; T5 = Ts[4];
-		}
-		
-		public void acceptLocalMerge(int pos, List<String> leftToken,
-				List<String> rightToken, List<String> longToken, double[] Ts) {
+			assert(sim.ops == sim.pos.size());	// sanity check
 			
-			cutPoints[pos] = false;
+			boolean boundaryType = (sim.type == SimulationType.GLOBAL_SPLIT || sim.type == SimulationType.LOCAL_SPLIT);
+			for (int i = 0; i < sim.pos.size(); i++) {
+				cutPoints[sim.pos.get(i)] = boundaryType;
+			}
 			
-			// Increment the long token to be created
-			addWord(longToken);
+			// Modify lexicon
+			int modCount;
+			for (List<String> w : sim.lexiconMod.keySet()) {
+				modCount = sim.lexiconMod.get(w);
+				if (modCount > 0) {
+					for (int i = 0; i < modCount; i++) {
+						addWord(w);
+					}
+				} else if (modCount < 0) {
+					for (int i = 0; i > modCount; i--) {
+						removeWord(w);
+					}
+				}
+			}
 			
-			// Decrement the two old sub-tokens
-			removeWord(leftToken);
-			removeWord(rightToken);
-
-			// Accept updates
-			T1 = Ts[0]; T2 = Ts[1]; T3 = Ts[2]; T4 = Ts[3]; T5 = Ts[4];
+			// Accept new MDL components
+			T[0] = sim.T[0]; T[1] = sim.T[1]; T[2] = sim.T[2]; T[3] = sim.T[3]; T[4] = sim.T[4];
 		}
 		
 		public List<String> getLeftToken(int pos) {
@@ -538,7 +598,7 @@ public class EntropyMDL {
 		}
 		
 		public double getMDL() {
-			return T1 + T2 + T3 + T4 + T5;
+			return T[0] + T[1] + T[2] + T[3] + T[4];
 		}
 	}
 }
