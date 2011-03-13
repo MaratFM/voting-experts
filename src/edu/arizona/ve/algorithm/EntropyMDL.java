@@ -16,17 +16,19 @@ import edu.arizona.ve.util.NF;
 import edu.arizona.ve.util.Stats;
 
 /**
-*
-* @author  Anh Tran
-* Unsupervised Word Segmentation algorithm using Branching Entropy & MDL
-* by Zhikov, Takamua, and Okumura (2010).
-*/
+ * 
+ * @author Anh Tran
+ * 
+ * Implementation of the unsupervised word segmentation algorithm (Ent-MDL)
+ * by Zhikov, Takamua, and Okumura (2010).
+ * 
+ */
 public class EntropyMDL {
 
 	Trie _forwardTrie, _backwardTrie;
 	Corpus _corpus;
 	int _maxLen;
-	Entropy[] _entropy;
+	double[] _entropy;
 	boolean[] _cutpoints;
 	double _mdl;
 	Model _model;
@@ -48,7 +50,7 @@ public class EntropyMDL {
 		// Calculate the branching entropies
 		_entropy = getBranchingEntropy(_corpus, _forwardTrie, _backwardTrie);
 		
-		// Generate initial hypothesis
+		// Generate initial hypothesis using branching entropy as 'goodness' scores
 		_cutpoints = algorithm1(_corpus, _entropy);
 
 		EvaluationResults evaluate = Evaluator.evaluate(_cutpoints, _corpus.getCutPoints());
@@ -84,12 +86,18 @@ public class EntropyMDL {
 	
 	
 	/************************************************************
-	 * Pre-processing: Calculates the branching entropy.
+	 * Calculates the accumulated branching entropy at each
+	 * boundary in the corpus (going both forward & backward).
+	 * @param c The corpus.
+	 * @param f The forward trie of the corpus.
+	 * @param b The backward trie of the corpus.
+	 * @return Array of branching entropy at each boundary
+	 * position in the corpus.
 	 */
-	public Entropy[] getBranchingEntropy(Corpus c, Trie f, Trie b) {
-		Entropy[] H = new Entropy[c.getCutPoints().length];
+	public double[] getBranchingEntropy(Corpus c, Trie f, Trie b) {
+		double[] H = new double[c.getCutPoints().length];
 		for (int i = 0; i < H.length; i++) {
-			H[i] = new Entropy(0., i);
+			H[i] = 0.;
 		}
 		
 		for (int i = 1; i <= _maxLen; i++) {
@@ -104,7 +112,7 @@ public class EntropyMDL {
 		return trie.getEntropy(subList);
 	}
 	
-	private void accumulateEntropy(Entropy[] H, int winLen,
+	private void accumulateEntropy(double[] H, int winLen,
 			Corpus c, Trie fTrie, Trie bTrie) {
 		List<String> fChars = c.getCleanChars();
 		List<String> bChars = c.getReverseCorpus().getCleanChars();
@@ -114,8 +122,8 @@ public class EntropyMDL {
 		while (n <= H.length) {
 			fh = entropy(m,n,fChars,fTrie);
 			bh = entropy(m,n,bChars,bTrie);
-			H[n-1].h += fh;
-			H[H.length-n].h += bh;
+			H[n-1] += fh;
+			H[H.length-n] += bh;
 			
 			m = m + 1;
 			n = n + 1;
@@ -128,23 +136,32 @@ public class EntropyMDL {
 	
 	
 	/************************************************************
-	 * Algorithm 1. Generates initial hypothesis
+	 * Algorithm 1. Generates an initial hypothesis by finding
+	 * the optimal threshold for some set of boundary scores.
+	 * The optimal threshold is found via a greedy search using
+	 * the minimum description length as the evaluation
+	 * method.
+	 * @param c The corpus.
+	 * @param scores The boundary scores, where higher scores
+	 * constitute more likely boundaries.
+	 * @return A segmentation based on the optimal threshold.
 	 */
-	public boolean[] algorithm1(Corpus c, Entropy[] H) {
-		// Sort branching entropies into thresholds
-		Entropy[] thresholds = Arrays.copyOf(H, H.length);
+	public boolean[] algorithm1(Corpus c, double[] scores) {
+		// Sort scores into thresholds
+		assert(c.getCutPoints().length == scores.length);
+		double[] thresholds = Arrays.copyOf(scores, scores.length);
 		Arrays.sort(thresholds);
 		
-		// Seed initial hypothesis at median
+		// Seed initial hypothesis at median threshold
 		int tempPos, pos = thresholds.length / 2;
 		int step = thresholds.length / 4;
 		int dir = 1; // ascending
-		double tempDL, mdl = simulateSegmentation(c, H, thresholds[pos].h);
+		double tempDL, mdl = simulateSegmentation(c, scores, thresholds[pos]);
 		
 		// Binary search for better threshold
 		while (step > 0) {
 			tempPos = pos + dir*step;
-			tempDL = simulateSegmentation(c, H, thresholds[tempPos].h);
+			tempDL = simulateSegmentation(c, scores, thresholds[tempPos]);
 			if (tempDL < mdl) {
 				mdl = tempDL;
 				pos = tempPos; 
@@ -153,7 +170,7 @@ public class EntropyMDL {
 			}
 			dir *= -1;
 			tempPos = pos + dir*step;
-			tempDL = simulateSegmentation(c, H, thresholds[tempPos].h);
+			tempDL = simulateSegmentation(c, scores, thresholds[tempPos]);
 			if (tempDL < mdl) {
 				mdl = tempDL;
 				pos = tempPos; 
@@ -164,21 +181,21 @@ public class EntropyMDL {
 			step /= 2;
 		}
 		
-		boolean[] initCuts = new boolean[H.length];
-		segmentByThreshold(initCuts, H, thresholds[pos].h);
+		boolean[] initCuts = new boolean[scores.length];
+		segmentByThreshold(initCuts, scores, thresholds[pos]);
 		return initCuts;
 	}
 	
-	private double simulateSegmentation(Corpus c, Entropy[] H, double threshold) {
-		boolean[] cuts = new boolean[H.length];
-		segmentByThreshold(cuts, H, threshold);
+	private double simulateSegmentation(Corpus c, double[] scores, double threshold) {
+		boolean[] cuts = new boolean[scores.length];
+		segmentByThreshold(cuts, scores, threshold);
 		return MDL.computeDescriptionLength(c, cuts);
 	}
 	
-	private void segmentByThreshold(boolean[] cuts, Entropy[] H, double threshold) {
-		for (int i = 0; i < H.length; i++) {
-			if (H[i].h > threshold)
-				cuts[H[i].pos] = true;
+	private void segmentByThreshold(boolean[] cuts, double[] scores, double threshold) {
+		for (int i = 0; i < scores.length; i++) {
+			if (scores[i] > threshold)
+				cuts[i] = true;
 		}
 	}
 	/************************************************************/
@@ -188,11 +205,23 @@ public class EntropyMDL {
 	
 	
 	/************************************************************
-	 * Algorithm 2. Compresses local token co-occurences
+	 * Algorithm 2. Compresses local token co-occurences.
+	 * Greedily merge and/or split local instances of tokens to
+	 * minimize the description length.
+	 * @param c The corpus.
+	 * @param initCuts The initial segmentation.
+	 * @param scores The boundary scores (used to guide the
+	 * search order), where higher scores constitute more likely
+	 * boundaries.
+	 * @return The resulting segmentation.
 	 */
-	public boolean[] algorithm2(Corpus c, boolean[] initCuts, Entropy[] H) {		
-		// Sort positions on entropy
-		Entropy[] path = Arrays.copyOf(H, H.length);
+	public boolean[] algorithm2(Corpus c, boolean[] initCuts, double[] scores) {
+		// Sort positions based on scores
+		assert(c.getCutPoints().length == scores.length);
+		Score[] path = new Score[scores.length];
+		for (int i = 0; i < path.length; i++) {
+			path[i] = new Score(i, scores[i]);
+		}
 		Arrays.sort(path);
 		
 		// DL of initial model
@@ -266,7 +295,13 @@ public class EntropyMDL {
 	
 	
 	/************************************************************
-	 * Algorithm 3. A lexicon clean-up procedure
+	 * Algorithm 3. A lexicon clean-up procedure.
+	 * Try to improve the initial segmentation by globally
+	 * splitting and merging different lexicon types to lower
+	 * the description length. 
+	 * @param c The corpus.
+	 * @param initCuts The initial segmentation.
+	 * @return The resulting segmentation.
 	 */
 	public boolean[] algorithm3(Corpus c, boolean[] initCuts) {
 		// DL of initial model
@@ -362,17 +397,17 @@ public class EntropyMDL {
 	
 	
 	
-	public static class Entropy implements Comparable<Entropy> {
-		public double h;
+	public static class Score implements Comparable<Score> {
+		public double score;
 		public int pos;
 		
-		public Entropy(double entropy, int pos) {
-			this.h = entropy;
+		public Score(int pos, double score) {
+			this.score = score;
 			this.pos = pos;
 		}
 		
-	    public int compareTo(Entropy entr) {
-	    	double diff = this.h - entr.h;
+	    public int compareTo(Score s) {
+	    	double diff = this.score - s.score;
 	        if (diff > 0)
 	        	return 1;
 	        else if (diff < 0)
@@ -381,7 +416,7 @@ public class EntropyMDL {
 	    }
 	    
 	    public String toString() {
-	    	return NF.format(h);
+	    	return NF.format(score);
 	    }
 	}
 	
@@ -879,9 +914,9 @@ public class EntropyMDL {
 //		Corpus c = Corpus.autoLoad("latin", "word");
 //		Corpus c = Corpus.autoLoad("caesar", "nocase");
 //		Corpus c = Corpus.autoLoad("orwell-short", CorpusType.LETTER, false);
-		Corpus c = Corpus.autoLoad("thai-novel-short", CorpusType.LETTER, true);
+//		Corpus c = Corpus.autoLoad("thai-novel-short", CorpusType.LETTER, true);
 //		Corpus c = Corpus.autoLoad("gray", CorpusType.LETTER, true);
-//		Corpus c = Corpus.autoLoad("br87", CorpusType.LETTER, true);
+		Corpus c = Corpus.autoLoad("br87", CorpusType.LETTER, true);
 		int maxLen = 3;
 		
 		EntropyMDL tpbe = new EntropyMDL(c, maxLen);
