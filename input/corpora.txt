@@ -1,0 +1,17 @@
+Core Corpora:
+
+Preserve Case:
+
+br87
+bloom73
+chinese-gw
+thai-novel-short
+
+Downcase:
+
+caesar
+gray
+switchboard
+orwell-short
+twain
+zarathustra
