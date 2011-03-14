@@ -1,7 +1,9 @@
 package edu.arizona.ve.corpus;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -613,5 +615,55 @@ public class Corpus {
 		Trie.addAll(backwardTrie, getReversed(), depth);
 		backwardTrie.generateStatistics();
 		return backwardTrie;
+	}
+	
+	public Trie makeKnowledgeTrie(int depth, boolean[] cuts) {
+		// First we make a corpus which contains boundary characters
+		ArrayList<String> knowledgeCorpus = new ArrayList<String>(cleanChars.size());
+		if (cuts.length != cleanChars.size() - 1) { // Sanity check
+			System.out.println("ERROR: Cut point length mismatch in writer");
+		}
+		
+		int numLetters = cleanChars.size();
+		
+		for (int i = 0; i < numLetters; i++) {
+			knowledgeCorpus.add(cleanChars.get(i));
+
+			if (i < cuts.length) {
+				if (cuts[i]) {
+					knowledgeCorpus.add("*");
+				} 
+			}
+		}
+
+		Trie knowledgeTrie = new Trie();
+		Trie.addAll(knowledgeTrie, knowledgeCorpus, depth);
+		knowledgeTrie.generateStatistics();
+		return knowledgeTrie;
+	}
+	
+	// Note: This is not used for anything right now
+	public Trie[] makeKnowledgeTries(int depth, boolean[] cuts) {
+		Trie forward = new Trie();
+		forward.depth = depth;
+		Trie backward = new Trie();
+		backward.depth = depth;
+		
+		List<List<String>> segments = getSegments(cuts);
+		
+		for (List<String> word : segments) {
+			if (word.size() > depth) {
+				forward.put(word.subList(0, depth), 1);
+				backward.put(Utils.reverseCopy(word).subList(0, depth), 1);
+			} else {
+				forward.put(word, 1);
+				backward.put(Utils.reverseCopy(word), 1);
+			}
+		}
+		
+		forward.generateStatistics();
+		backward.generateStatistics();
+		
+		return new Trie[] { forward, backward };
 	}
 }

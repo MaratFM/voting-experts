@@ -1,7 +1,6 @@
 package edu.arizona.ve.demo;
 
 import edu.arizona.ve.api.AutoEngine;
-import edu.arizona.ve.api.Engine;
 import edu.arizona.ve.api.Segmentation;
 import edu.arizona.ve.corpus.Corpus;
 import edu.arizona.ve.corpus.Corpus.CorpusType;
@@ -16,11 +15,11 @@ public class AutoBVEDemo {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		Engine.EVALUATE = true;
+//		Engine.EVALUATE = true;
 //		Engine.DEBUG = true;
 		
 		// Load the corpus 
-		Corpus corpus = Corpus.autoLoad("switchboard", CorpusType.LETTER, false);
+		Corpus corpus = Corpus.autoLoad("br87", CorpusType.LETTER, true);
 
 		// Segment using BVE with MDL (self-setting parameters)
 		Segmentation segmentation = AutoEngine.autoBVE(corpus);

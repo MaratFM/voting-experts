@@ -77,21 +77,16 @@ public class AutoEngine {
 		Vector<Segmentation> segmentations = new Vector<Segmentation>();
 		Vector<Double> scores = new Vector<Double>();
 		
-		int minWindow = 2;
+		int minWindow = 3;
 		
 		Engine engine = new Engine(c, maxWindow + 1);
 		
-		// Local max on
 		for (int window = minWindow; window <= maxWindow; window++) {
-			segmentations.addAll(engine.voteBVEMDL(window, true, false));
+			segmentations.addAll(engine.voteBVEMDL(window, false));
+			System.out.println("WINDOW " + window + " of " + maxWindow + " COMPLETE!");
+			segmentations.addAll(engine.voteBVEMDL(window, true));
+			System.out.println("WINDOW " + window + " of " + maxWindow + " COMPLETE!");
 		}
-		
-		// Local max off
-		for (int window = minWindow; window <= maxWindow; window++) {
-			segmentations.addAll(engine.voteBVEMDL(window, false, false));
-		}
-		
-		// TODO: The above code can be made more efficient, or at least parallelized
 		
 		for (Segmentation s : segmentations) {
 			EvaluationResults results = Evaluator.evaluate(s, c);
@@ -150,12 +145,12 @@ public class AutoEngine {
 		
 		// Local max on
 		for (int window = minWindow; window <= maxWindow; window++) {
-			segmentations.addAll(engine.voteBVEMDL(window, true, false));
+			segmentations.addAll(engine.voteBVEMDL(window, false));
 		}
 		
 		// Local max off
 		for (int window = minWindow; window <= maxWindow; window++) {
-			segmentations.addAll(engine.voteBVEMDL(window, false, false));
+			segmentations.addAll(engine.voteBVEMDL(window, false));
 		}
 		
 		for (Segmentation s : segmentations) {

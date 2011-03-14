@@ -24,7 +24,7 @@ public class ManualBVEDemo {
 		Engine engine = new Engine(corpus, 7);
 		
 		// Segment using BVE with manually-specified parameters
-		Segmentation segmentation = engine.voteBVE(6, 0, true, true);
+		Segmentation segmentation = engine.voteBVE(6, 3, true, false);
 		
 		// Evaluate (compute precision, recall, F-measure, etc.) 
 		EvaluationResults results = Evaluator.evaluate(segmentation, corpus);

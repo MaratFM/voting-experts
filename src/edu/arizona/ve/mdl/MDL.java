@@ -3,6 +3,7 @@ package edu.arizona.ve.mdl;
 import java.util.HashMap;
 import java.util.List;
 
+import edu.arizona.ve.algorithm.EntropyMDL.Model;
 import edu.arizona.ve.corpus.Corpus;
 import edu.arizona.ve.corpus.Corpus.CorpusType;
 import edu.arizona.ve.util.NF;
@@ -11,23 +12,11 @@ import edu.arizona.ve.util.Stats;
 public class MDL {
 
 	public static double computeDescriptionLength(Corpus corpus, boolean[] cutPoints) {
-//		Set<String> alphabet = trie.getChildren(new ArrayList<String>()).keySet();
-		
-//		System.out.println("ALPHABET SIZE: " + alphabet.size());
-		
-//		Vector<Double> charFreq = new Vector<Double>();
-//		for (String s : alphabet) {
-//			List<String> list = new Vector<String>();
-//			list.add(s);
-//			double freq = trie.getFreq(list);
-//			charFreq.add(freq);
-//		}
-		
+
 		int totalWords = 0;
 		HashMap<List<String>,Integer> lexicon = new HashMap<List<String>,Integer>();
 		List<List<String>> segments = corpus.getSegments(cutPoints);
 		for (List<String> seg : segments) {
-//			System.out.println(seg);
 			totalWords++;
 			if (lexicon.containsKey(seg)) { lexicon.put(seg, lexicon.get(seg) + 1); } 
 			else { lexicon.put(seg, 1);	}
@@ -91,8 +80,11 @@ public class MDL {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		Corpus c = Corpus.autoLoad("br87", CorpusType.LETTER, true);
+		Corpus c = Corpus.autoLoad("orwell-short", CorpusType.LETTER, false);
 		System.out.println(NF.format(MDL.computeDescriptionLength(c, c.getCutPoints())));
+		
+		Model m = new Model(c, c.getCutPoints());
+		System.out.println(NF.format(m.getMDL()));
 	}
 
 }

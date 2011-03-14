@@ -82,117 +82,45 @@ public class Engine {
 	}
 
 	public Segmentation voteBVE(int window, int minThreshold, boolean useLocalMax, boolean bidiBVE) {
-
-		int startThreshold = window * (bidiBVE ? 3 : 2); // window + thresholdOffset 
-		
-		// Experimenting with dummy corpus 0 this just means the first time the knowledge expert won't do anything
-		List<String> forwardKnowledgeCorpus = corpus.getCleanChars(); //new ArrayList<String>(bidiInput.getCleanChars());
-		forwardKnowledgeTrie = new Trie();
-		Trie.addAll(forwardKnowledgeTrie, forwardKnowledgeCorpus, trieDepth+1);
-		forwardKnowledgeTrie.generateStatistics();
-
-		partialSegmentation = votePartial(window, startThreshold, useLocalMax, bidiBVE);
-		CorpusWriter.writeCorpus(corpus.getName()  + "-partial-1.txt", corpus, partialSegmentation);
-		
-		if (DEBUG)
-			evaluate();
-		
-		bidiSegmentation = null; // stop the printing of the bidi array, we're done with it
-		
-//		boolean[] lastSegmentation = partialSegmentation.cutPoints;
-		
-		int i = 1;
-//		int cyclesAtLevel = 0;
-		for (int threshold = startThreshold - 1; threshold >= minThreshold; ) {
-			Corpus partialInputRest = new Corpus();
-			partialInputRest.naiveLoad("output/" + corpus.getName()  + "-partial-" + i + ".txt", corpus.getType());
-			
-			forwardKnowledgeCorpus = partialInputRest.getCleanChars();
-			forwardKnowledgeTrie = new Trie();
-			Trie.addAll(forwardKnowledgeTrie, forwardKnowledgeCorpus, trieDepth+1);
-			forwardKnowledgeTrie.generateStatistics();
-			
-			partialSegmentation = votePartial(window, threshold, useLocalMax, bidiBVE);
-			CorpusWriter.writeCorpus(corpus.getName()  + "-partial-" + (i+1) + ".txt", corpus, partialSegmentation);
-			
-			if (DEBUG)
-				evaluate();
-			
-			i++;
-
-			threshold--;
-			
-//			if (Arrays.equals(partialSegmentation.cutPoints, lastSegmentation) || cyclesAtLevel > 6) {
-//				threshold--;
-//				cyclesAtLevel = 0;
-//			} else {
-//				cyclesAtLevel++;
-//			}
-//			lastSegmentation = partialSegmentation.cutPoints;
-		}
-		
-		//Trie.extractWords(forwardKnowledgeTrie);
-		
-		return partialSegmentation;
-	}
-	
-	public List<Segmentation> voteBVEMDL(int window, boolean useLocalMax, boolean bidiBVE) {
-		
 		int startThreshold = (window * (bidiBVE ? 3 : 2)) - 1; // window + thresholdOffset 
 		
-		// Experimenting with dummy corpus 0 this just means the first time the knowledge expert won't do anything
-		List<String> forwardKnowledgeCorpus = corpus.getCleanChars(); //new ArrayList<String>(bidiInput.getCleanChars());
-		forwardKnowledgeTrie = new Trie();
-		Trie.addAll(forwardKnowledgeTrie, forwardKnowledgeCorpus, trieDepth+1);
-		forwardKnowledgeTrie.generateStatistics();
-
-		partialSegmentation = votePartial(window, startThreshold, useLocalMax, bidiBVE);
-		CorpusWriter.writeCorpus(corpus.getName()  + "-partial-" + startThreshold + ".txt", corpus, partialSegmentation);
+		forwardKnowledgeTrie = corpus.makeForwardTrie(window);
+		Segmentation result = votePartial(window, startThreshold, useLocalMax, bidiBVE);
 		
-		if (DEBUG)
-			evaluate();
-		
-		bidiSegmentation = null; // stop the printing of the bidi array, we're done with it
-		
-		// For now, let's segment with all thresholds and pick the best
-		
-		double minDL = Double.MAX_VALUE;
-		Segmentation bestSegmentation = null;
-		Vector<Segmentation> segmentations = new Vector<Segmentation>();
+		if (DEBUG) 
+			Evaluator.evaluate(result, corpus).printResults();
 		
 		for (int threshold = startThreshold - 1; threshold >= 0; threshold-- ) {
-			Corpus partialInputRest = new Corpus();
-			partialInputRest.naiveLoad("output/" + corpus.getName()  + "-partial-" + (threshold+1) + ".txt", corpus.getType());
-			
-			forwardKnowledgeCorpus = partialInputRest.getCleanChars();
-			forwardKnowledgeTrie = new Trie();
-			Trie.addAll(forwardKnowledgeTrie, forwardKnowledgeCorpus, trieDepth+1);
-			forwardKnowledgeTrie.generateStatistics();
-			
-			partialSegmentation = votePartial(window, threshold, useLocalMax, bidiBVE);
-			CorpusWriter.writeCorpus(corpus.getName()  + "-partial-" + threshold + ".txt", corpus, partialSegmentation);
-
-//			System.out.println("THRESHOLD: " + threshold + "\tDL: " + partialSegmentation.descriptionLength);
-			if (partialSegmentation.descriptionLength < minDL) {
-				minDL = partialSegmentation.descriptionLength;
-				bestSegmentation = partialSegmentation;
-			}
-			
-			segmentations.add(partialSegmentation);
-			
-			if (DEBUG) {
-				evaluate();
-				System.out.println();
-			}
+			forwardKnowledgeTrie = corpus.makeKnowledgeTrie(window, result.cutPoints);
+			result = votePartial(window, threshold, useLocalMax, bidiBVE);
+			if (DEBUG) 
+				Evaluator.evaluate(result, corpus).printResults();	
 		}
 		
-		//Trie.extractWords(forwardKnowledgeTrie);
+		return result;
+	}
+	
+	public List<Segmentation> voteBVEMDL(int window, boolean bidiBVE) {
+		int startThreshold = (window * (bidiBVE ? 3 : 2)) - 1; // window + thresholdOffset 
 		
-		partialSegmentation = bestSegmentation;
+		forwardKnowledgeTrie = corpus.makeForwardTrie(window);
+		
+		Segmentation localMaxOn = votePartial(window, startThreshold, true, bidiBVE);
+		Segmentation localMaxOff = votePartial(window, startThreshold, false, bidiBVE);
+		
+		Vector<Segmentation> segmentations = new Vector<Segmentation>();
+		for (int threshold = startThreshold - 1; threshold >= 0; threshold-- ) {
+			Trie knowledgeTrieOn = corpus.makeKnowledgeTrie(window, localMaxOn.cutPoints);
+			Trie knowledgeTrieOff = corpus.makeKnowledgeTrie(window, localMaxOff.cutPoints);
+			
+			localMaxOn = votePartial(window, threshold, true, bidiBVE, knowledgeTrieOn);
+			localMaxOff = votePartial(window, threshold, false, bidiBVE, knowledgeTrieOff);
+
+			segmentations.add(localMaxOn);
+			segmentations.add(localMaxOff);
+		}
 		
 		return segmentations;
-		
-//		return bestSegmentation;
 	}
 	
 	// TODO: What is the difference between this and voteKnowledgeTransfer
@@ -295,8 +223,35 @@ public class Engine {
 		return segmentations;
 	}
 	
+	public Segmentation votePartial(int windowSize, int threshold, boolean useLocalMax, boolean bidi, Trie kTrie) {
+	    VotingExperts pve; // NOTE: Be careful!
+	    if (bidi) {
+	    	pve = VotingExperts.makeBidiBVE(corpus, forwardTrie, backwardTrie, kTrie, windowSize, threshold);
+	    } else {
+	    	pve = VotingExperts.makeBVE(corpus, forwardTrie, kTrie, windowSize, threshold);
+	    }
+	    pve.runAlgorithm(useLocalMax);
+	    
+	    Segmentation s = new Segmentation(windowSize, threshold);
+	    s.cutPoints = Utils.makeArray(pve.getCutPoints());
+	    s.localMax = useLocalMax;
+	    s.descriptionLength = MDL.computeDescriptionLength(corpus, s.cutPoints);
+	    s.votes = pve.getVotes();
+	    
+	    partialSegmentation = s;
+	    
+	    if (DEBUG) {
+//	    	System.out.println();
+		    System.out.println(pve.getVoteString(100));
+		    System.out.println(pve.getSegmentedString(100, threshold));
+//		    System.out.println(s.descriptionLength);
+	    }
+	    
+	    return s;
+	}
+	
 	public Segmentation votePartial(int windowSize, int threshold, boolean useLocalMax, boolean bidi) {
-	    VotingExperts pve;
+	    VotingExperts pve; // NOTE: Be careful!
 	    if (bidi) {
 	    	pve = VotingExperts.makeBidiBVE(corpus, forwardTrie, backwardTrie, forwardKnowledgeTrie, windowSize, threshold);
 	    } else {
@@ -308,6 +263,7 @@ public class Engine {
 	    s.cutPoints = Utils.makeArray(pve.getCutPoints());
 	    s.localMax = useLocalMax;
 	    s.descriptionLength = MDL.computeDescriptionLength(corpus, s.cutPoints);
+	    s.votes = pve.getVotes();
 	    
 	    partialSegmentation = s;
 	    
@@ -411,7 +367,7 @@ public class Engine {
 		
 		Engine e = new Engine(corpus, window+1);
 //		e.voteBackward(7, 3, false);
-		e.voteBVE(window, 0, false, true);
+		e.voteBVE(window, 0, true, true);
 		e.evaluate();
 		
 //		Engine.bidiBootstrap(corpus, 7, 14, 3, false);

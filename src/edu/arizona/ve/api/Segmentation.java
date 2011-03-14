@@ -11,6 +11,7 @@ public class Segmentation implements Comparable<Segmentation> {
 	public boolean[] cutPoints;
 	public double descriptionLength;
 	public Direction direction = Direction.Forward;
+	public int[] votes = null;
 	
 	public Segmentation() {}
 	
