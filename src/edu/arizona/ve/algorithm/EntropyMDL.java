@@ -1,5 +1,7 @@
 package edu.arizona.ve.algorithm;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -29,7 +31,7 @@ public class EntropyMDL {
 	Corpus _corpus;
 	int _maxLen;
 	double[] _entropy;
-	boolean[] _cutpoints;
+	boolean[] _cutPoints1, _cutPoints2, _cutPoints3;
 	double _mdl;
 	Model _model;
 	
@@ -47,38 +49,63 @@ public class EntropyMDL {
 	
 	
 	public boolean[] runAlgorithm() {
+
 		// Calculate the branching entropies
 		_entropy = getBranchingEntropy(_corpus, _forwardTrie, _backwardTrie);
 		
 		// Generate initial hypothesis using branching entropy as 'goodness' scores
-		_cutpoints = algorithm1(_corpus, _entropy);
+		_cutPoints1 = algorithm1(_corpus, _entropy);
 
-		EvaluationResults evaluate = Evaluator.evaluate(_cutpoints, _corpus.getCutPoints());
-		evaluate.printResults();
-		System.out.println(evaluate.boundaryF1());
-		System.out.println(Arrays.toString(Arrays.copyOf(_entropy, 100)));
-		System.out.println(_corpus.getCleanChars().subList(0, 100));
-		System.out.println(Arrays.toString(Arrays.copyOf(_cutpoints, 100)));
+		System.out.println("\nAlgorithm 1:");
+		Evaluator.evaluate(getCutPoints1(), _corpus.getCutPoints()).printResults();
+		System.out.println("MDL: " + getMDL1());
 
 		// Compress local token co-occurences
-		_cutpoints = algorithm2(_corpus, _cutpoints, _entropy);
+		_cutPoints2 = Arrays.copyOf(_cutPoints1, _cutPoints1.length);
+		_cutPoints2 = algorithm2(_corpus, _cutPoints2, _entropy);
 
-		evaluate = Evaluator.evaluate(_cutpoints, _corpus.getCutPoints());
-		evaluate.printResults();
-		System.out.println(evaluate.boundaryF1());
-		System.out.println(_corpus.getCleanChars().subList(0, 100));
-		System.out.println(Arrays.toString(Arrays.copyOf(_cutpoints, 100)));
+		System.out.println("\n\nAlgorithm 2:");
+		Evaluator.evaluate(getCutPoints2(), _corpus.getCutPoints()).printResults();
+		System.out.println("MDL: " + getMDL2());
 		
 		// Lexicon clean-up
-		_cutpoints = algorithm3(_corpus, _cutpoints);
+		_cutPoints3 = Arrays.copyOf(_cutPoints2, _cutPoints2.length);
+		_cutPoints3 = algorithm3(_corpus, _cutPoints3);
+
+		System.out.println("\n\nAlgorithm 3:");
+		Evaluator.evaluate(getCutPoints3(), _corpus.getCutPoints()).printResults();
+		System.out.println("MDL: " + getMDL3());
 		
-		evaluate = Evaluator.evaluate(_cutpoints, _corpus.getCutPoints());
-		evaluate.printResults();
-		System.out.println(evaluate.boundaryF1());
-		System.out.println(_corpus.getCleanChars().subList(0, 100));
-		System.out.println(Arrays.toString(Arrays.copyOf(_cutpoints, 100)));
-		
-		return _cutpoints;
+		return _cutPoints3;
+	}
+	
+	
+	
+	
+
+	public boolean[] getCutPoints1() {
+		return _cutPoints1;
+	}
+
+	public boolean[] getCutPoints2() {
+		return _cutPoints2;
+	}
+	
+	
+	public boolean[] getCutPoints3() {
+		return _cutPoints3;
+	}
+	
+	public double getMDL1() {
+		return MDL.computeDescriptionLength(_corpus, _cutPoints1);
+	}
+	
+	public double getMDL2(){
+		return MDL.computeDescriptionLength(_corpus, _cutPoints2);
+	}
+	
+	public double getMDL3() {
+		return MDL.computeDescriptionLength(_corpus, _cutPoints3);
 	}
 	
 	
@@ -253,8 +280,6 @@ public class EntropyMDL {
 				}
 			}
 
-//			System.out.println(mdl);
-//			System.out.println(model.getCalculatedMDL());
 			mdl = model.reComputeMDL();
 			
 			for (int i = 0; i < path.length; i++) {
@@ -274,16 +299,12 @@ public class EntropyMDL {
 				}
 			}
 
-//			System.out.println(mdl);
-//			System.out.println(model.getCalculatedMDL());
 			mdl = model.reComputeMDL();
 			
 			// Exit if no change is evident in the model
 			if (!change /*|| counter > 50*/) {
 				break;
 			}
-
-			System.out.println(mdl);
 		}
 		
 		return model.cutPoints;
@@ -344,8 +365,6 @@ public class EntropyMDL {
 				}
 			}
 
-//			System.out.println(mdl);
-//			System.out.println(model.getCalculatedMDL());
 			mdl = model.reComputeMDL();
 			
 			if (change)
@@ -377,16 +396,12 @@ public class EntropyMDL {
 				}
 			}
 
-//			System.out.println(mdl);
-//			System.out.println(model.getCalculatedMDL());
 			mdl = model.reComputeMDL();
 			
 			// Exit if no change is evident in the model
 			if (!change /*|| counter > 50*/) {
 				break;
 			}
-
-			System.out.println(mdl);
 		}
 		
 		return model.cutPoints;
@@ -520,7 +535,7 @@ public class EntropyMDL {
 		
 		public Model(Corpus c, boolean[] cuts) {
 			this.corpus = c;
-			this.cutPoints = cuts;
+			this.cutPoints = Arrays.copyOf(cuts, cuts.length);
 			this.lexicon = new HashMap<List<String>, Integer>();
 			this.accumulatedWords = 0;
 			this.letters = new HashMap<String, Integer>();
@@ -909,17 +924,110 @@ public class EntropyMDL {
 	
 	
 
-	public static void main(String[] args) {
-//		Corpus c = Corpus.autoLoad("latin-morph", "case");
-//		Corpus c = Corpus.autoLoad("latin", "word");
-//		Corpus c = Corpus.autoLoad("caesar", "nocase");
-//		Corpus c = Corpus.autoLoad("orwell-short", CorpusType.LETTER, false);
-//		Corpus c = Corpus.autoLoad("thai-novel-short", CorpusType.LETTER, true);
-//		Corpus c = Corpus.autoLoad("gray", CorpusType.LETTER, true);
-		Corpus c = Corpus.autoLoad("br87", CorpusType.LETTER, true);
-		int maxLen = 3;
+
+	public static void runExperiment(Corpus c) {
+		EntropyMDL tpbe;
+		EvaluationResults eval1, eval2, eval3;
+		double bestMDL = Double.MAX_VALUE, bestF = Double.MIN_VALUE;
+		int bestMDLWin = -1, bestFWin = -1;
+
+        String wd = System.getProperty("user.dir");
+		String path = wd + "/" + "results/" + Corpus.getFolder(c.getType())
+			+ "/EntMDL-" + c.getName() + ".txt";
 		
-		EntropyMDL tpbe = new EntropyMDL(c, maxLen);
-		tpbe.runAlgorithm();
+		try {
+			
+			BufferedWriter out = new BufferedWriter(new FileWriter(path));
+			
+			for (int maxLen = 3; maxLen <= 8; maxLen++) {
+
+				System.out.println("\nWIN LENGTH: " + maxLen);
+				
+				tpbe = new EntropyMDL(c, maxLen);
+				tpbe.runAlgorithm();
+				
+				out.write("***************** WinLen: " + maxLen + " *****************\n\n");
+				eval1 = Evaluator.evaluate(tpbe.getCutPoints1(), c.getCutPoints());
+				out.write("- Algorithm 1 -\n");
+				out.write("MDL: " + tpbe.getMDL1() + "\n");
+				out.write("B-F: " + eval1.boundaryF1() + "\n");
+			    out.write(NF.format(eval1.boundaryPrecision) + "\t"
+			    		+ NF.format(eval1.boundaryRecall) + "\t"
+			    		+ NF.format(eval1.boundaryF1()) + "\t");
+			    out.write(NF.format(eval1.chunkPrecision) + "\t"
+			    		+ NF.format(eval1.chunkRecall) + "\t"
+			    		+ NF.format(eval1.chunkF1()) + "\n");
+			    out.write("\n");
+
+				eval2 = Evaluator.evaluate(tpbe.getCutPoints2(), c.getCutPoints());
+				out.write("- Algorithm 2 -\n");
+				out.write("MDL: " + tpbe.getMDL2() + "\n");
+				out.write("B-F: " + eval2.boundaryF1() + "\n");
+			    out.write(NF.format(eval2.boundaryPrecision) + "\t"
+			    		+ NF.format(eval2.boundaryRecall) + "\t"
+			    		+ NF.format(eval2.boundaryF1()) + "\t");
+			    out.write(NF.format(eval2.chunkPrecision) + "\t"
+			    		+ NF.format(eval2.chunkRecall) + "\t"
+			    		+ NF.format(eval2.chunkF1()) + "\n");
+			    out.write("\n");
+
+				eval3 = Evaluator.evaluate(tpbe.getCutPoints3(), c.getCutPoints());
+				out.write("- Algorithm 3 -\n");
+				out.write("MDL: " + tpbe.getMDL3() + "\n");
+				out.write("B-F: " + eval3.boundaryF1() + "\n");
+			    out.write(NF.format(eval3.boundaryPrecision) + "\t"
+			    		+ NF.format(eval3.boundaryRecall) + "\t"
+			    		+ NF.format(eval3.boundaryF1()) + "\t");
+			    out.write(NF.format(eval3.chunkPrecision) + "\t"
+			    		+ NF.format(eval3.chunkRecall) + "\t"
+			    		+ NF.format(eval3.chunkF1()) + "\n");
+			    out.write("\n\n\n");
+			    
+			    if (tpbe.getMDL3() < bestMDL) {
+			    	bestMDL = tpbe.getMDL3();
+			    	bestMDLWin = maxLen;
+			    }
+
+			    if (eval3.boundaryF1() > bestF) {
+			    	bestF = eval3.boundaryF1();
+			    	bestFWin = maxLen;
+			    }
+			}
+			
+			out.write("****************** SUMMARY ******************\n\n");
+			out.write("- Best BF -\n");
+			out.write("Win: " + bestFWin + "\n");
+			out.write("B-F: " + bestF + "\n\n");
+			out.write("- Best MDL -\n");
+			out.write("Win: " + bestMDLWin + "\n");
+			out.write("MDL: " + bestMDL + "\n\n");
+			
+			out.close();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 	}
+	
+
+	public static void main(String[] args) {
+		List<Corpus> corpora = new ArrayList<Corpus>();
+		
+		corpora.add(Corpus.autoLoad("br87", CorpusType.LETTER, true));
+//		corpora.add(Corpus.autoLoad("bloom73", CorpusType.LETTER, true));
+//		corpora.add(Corpus.autoLoad("chinese-gw", CorpusType.LETTER, true));
+//		corpora.add(Corpus.autoLoad("thai-novel-short", CorpusType.LETTER, true));
+		
+//		corpora.add(Corpus.autoLoad("caesar", CorpusType.LETTER, false));
+//		corpora.add(Corpus.autoLoad("gray", CorpusType.LETTER, false));
+//		corpora.add(Corpus.autoLoad("switchboard", CorpusType.LETTER, false));
+//		corpora.add(Corpus.autoLoad("orwell-short", CorpusType.LETTER, false));
+//		corpora.add(Corpus.autoLoad("twain", CorpusType.LETTER, false));
+//		corpora.add(Corpus.autoLoad("zarathustra", CorpusType.LETTER, false));
+		
+		for (Corpus c : corpora) {
+			System.out.println("\nCORPUS: " + c.getName());
+			EntropyMDL.runExperiment(c);
+		}
+	}
+
 }
