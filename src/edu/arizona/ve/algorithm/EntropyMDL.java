@@ -252,7 +252,8 @@ public class EntropyMDL {
 		Arrays.sort(path);
 		
 		// DL of initial model
-		Model model = new Model(c, initCuts);
+		boolean[] cuts = Arrays.copyOf(initCuts, initCuts.length);
+		Model model = new Model(c, cuts);
 		double mdl = model.getMDL();
 		
 		int pos, counter = 0;
@@ -326,7 +327,8 @@ public class EntropyMDL {
 	 */
 	public boolean[] algorithm3(Corpus c, boolean[] initCuts) {
 		// DL of initial model
-		Model model = new Model(c, initCuts);
+		boolean[] cuts = Arrays.copyOf(initCuts, initCuts.length);
+		Model model = new Model(c, cuts);
 		double mdl = model.getMDL();
 		
 		// Get initial list of lexicon types
