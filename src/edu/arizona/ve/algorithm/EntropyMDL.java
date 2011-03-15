@@ -4,7 +4,9 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
 import edu.arizona.ve.algorithm.EntropyMDL.SimulationResult.SimulationType;
@@ -244,7 +246,7 @@ public class EntropyMDL {
 	 */
 	public boolean[] algorithm2(Corpus c, boolean[] initCuts, double[] scores) {
 		// Sort positions based on scores
-		assert(c.getCutPoints().length == scores.length);
+		assert(initCuts.length == scores.length);
 		Score[] path = new Score[scores.length];
 		for (int i = 0; i < path.length; i++) {
 			path[i] = new Score(i, scores[i]);
@@ -307,6 +309,8 @@ public class EntropyMDL {
 				break;
 			}
 		}
+		
+		model.integrityCheck();		// sanity check
 		
 		return model.cutPoints;
 	}
@@ -405,6 +409,8 @@ public class EntropyMDL {
 				break;
 			}
 		}
+
+		model.integrityCheck();		// sanity check
 		
 		return model.cutPoints;
 	}
@@ -544,7 +550,7 @@ public class EntropyMDL {
 			this.accumulatedLetters = 0;
 			
 			// Construct lexicon and letters models
-			List<List<String>> segments = c.getSegments(cuts);
+			List<List<String>> segments = corpus.getSegments(cutPoints);
 			for (List<String> w : segments) {
 				addWord(w);
 			}
@@ -848,21 +854,33 @@ public class EntropyMDL {
 			// Find all occurrences of longType
 			List<Integer> indices = findInstancesInCorpus(longType);
 			
-			int split, n = longType.size();
+			int split, n = longType.size(), prevTokenIndx = Integer.MIN_VALUE;
+			Collections.sort(indices);
+			Iterator<Integer> iterator = indices.iterator();
 			nextIndex:
-			for (int i : indices) {
+			while (iterator.hasNext()) {
+				int i = iterator.next();
+				
+				// If we just performed a merge then the next merge should not use
+				// any part of the previously merged word.
+				// Example: Merging "|id|id|" into "|idid|" and running into
+				// 			a corpus with "|id|id|id|id|"
+				if (i >= prevTokenIndx && i < prevTokenIndx + n)
+					continue;
 				
 				// Make sure the sequence is bounded on both ends
 				if ((i > 0 && !cutPoints[i-1]) || (i-1+n < cutPoints.length  && !cutPoints[i-1+n]))
 					continue;
 				
-				// Make sure the sequence is continuous except for 1 boundary
-				// separating the left & right words
+				// Make sure the internal of the sequence is continuous except for exactly
+				// 1 boundary separating the left & right tokens
 				split = i+leftType.size()-1;
 				for (int j = i; j < i-1+n; j++) {
 					if ((j == split && !cutPoints[j]) || (j != split && cutPoints[j]))
 						continue nextIndex;
 				}
+				
+				prevTokenIndx = i;
 				
 				// Found valid left & right words, add boundary to remove
 				sim.pos.add(split);
@@ -920,6 +938,43 @@ public class EntropyMDL {
 			}
 			return indx;
 		}
+
+		public void integrityCheck() {
+			HashMap<List<String>,Integer> lex = new HashMap<List<String>, Integer>();
+			HashMap<String,Integer> let = new HashMap<String, Integer>();;
+			double accumWords = 0, accumLets = 0;
+			
+			List<List<String>> segments = corpus.getSegments(cutPoints);
+			
+			for (List<String> word : segments) {
+				if (lex.containsKey(word)) {
+					lex.put(word, lex.get(word) + 1);
+				} else {
+					lex.put(word, 1);
+					accumLets += word.size();
+					for (String letter : word) {
+						if (let.containsKey(letter)) {
+							let.put(letter, let.get(letter) + 1);
+						} else {
+							let.put(letter, 1);
+						}
+					}
+				}		
+				accumWords += 1;
+			}
+			
+			assert((int)accumWords == (int)this.accumulatedWords);
+			assert((int)accumLets == (int)this.accumulatedLetters);
+			assert(lex.keySet().size() == lexicon.keySet().size());
+			assert(let.keySet().size() == letters.keySet().size());
+			for (List<String> w : lex.keySet()) {
+				assert(lex.get(w).equals(lexicon.get(w)));
+			}
+			for (String c : let.keySet()) {
+				assert(let.get(c).equals(letters.get(c)));
+			}
+		}
+		
 	}
 	
 	
