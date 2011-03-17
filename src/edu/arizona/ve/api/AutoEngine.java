@@ -3,6 +3,7 @@ package edu.arizona.ve.api;
 import java.util.Collections;
 import java.util.Vector;
 
+import edu.arizona.ve.algorithm.auto.AutoBVE;
 import edu.arizona.ve.corpus.Corpus;
 import edu.arizona.ve.corpus.CorpusWriter;
 import edu.arizona.ve.evaluation.EvaluationResults;
@@ -82,10 +83,12 @@ public class AutoEngine {
 		Engine engine = new Engine(c, maxWindow + 1);
 		
 		for (int window = minWindow; window <= maxWindow; window++) {
-			segmentations.addAll(engine.voteBVEMDL(window, false));
+//			segmentations.addAll(engine.voteBVEMDL(window, false));
+			AutoBVE bve = new AutoBVE();
+			segmentations.add(e)
 			System.out.println("WINDOW " + window + " of " + maxWindow + " COMPLETE!");
-			segmentations.addAll(engine.voteBVEMDL(window, true));
-			System.out.println("WINDOW " + window + " of " + maxWindow + " COMPLETE!");
+//			segmentations.addAll(engine.voteBVEMDL(window, true));
+//			System.out.println("WINDOW " + window + " of " + maxWindow + " COMPLETE!");
 		}
 		
 		for (Segmentation s : segmentations) {

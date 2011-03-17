@@ -24,8 +24,8 @@ public class IncrementalBVE implements IncrementalAlgorithm {
 	VotingExperts ve;
 	Trie fTrie, bTrie, kTrie;
 	int trieDepth;
-	int windowSize = 4; 
-	int threshold = 6;
+	int windowSize = 7; 
+	int threshold = 8;
 	int n = 0;
 	int wait = 0; // 500;
 	
@@ -52,7 +52,7 @@ public class IncrementalBVE implements IncrementalAlgorithm {
 		ve.runAlgorithm(false);
 		
 		String segmented = new String();
-		for (List<String> seg : cl.getSegments(Utils.makeArray(ve.getCutPoints()))) {
+		for (List<String> seg : cl.getSegments(ve.getCutPoints())) {
 			for (String c : seg) { segmented += c; }
 			segmented += " ";
 		}

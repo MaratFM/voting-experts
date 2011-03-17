@@ -4,6 +4,7 @@ import java.util.List;
 
 import edu.arizona.ve.corpus.Corpus;
 import edu.arizona.ve.corpus.Corpus.CorpusType;
+import edu.arizona.ve.corpus.CorpusPrinter;
 import edu.arizona.ve.evaluation.Evaluator;
 import edu.arizona.ve.trie.Trie;
 import edu.arizona.ve.util.NF;
@@ -20,6 +21,8 @@ public class PhonemeToMorpheme {
 	private boolean[] _cutPoints;
 	int _maxLen;
 	
+	double[] _scores = null;
+	
 	public PhonemeToMorpheme(Trie forwardTrie, Trie backwardTrie, Corpus corpus, int maxLen) {
 		_forwardTrie = forwardTrie;
 		_backwardTrie = backwardTrie;
@@ -28,11 +31,14 @@ public class PhonemeToMorpheme {
 		_maxLen = maxLen;
 	}
 	
-	public void runAlgorithm(double threshold) {
+	public boolean[] runAlgorithm(double threshold) {
+		_scores = new double[_corpus.getCutPoints().length];
+		
 		boolean[] forward = runForward(threshold);
 		boolean[] backward = runBackward(threshold);
 		boolean[] combined = Utils.combineUnion(forward, backward);
 		setCutPoints(combined);
+		return getCutPoints();
 	}
 	
 	private double hf(int m, int n) {
@@ -55,6 +61,8 @@ public class PhonemeToMorpheme {
 			if (diff > threshold) {
 				cuts[n] = true;
 			}
+//			_scores[n] = Math.max(_scores[n], diff);
+			_scores[n] += diff;
 			
 			if (n > m + _maxLen) {
 				m = m + 1;
@@ -81,6 +89,11 @@ public class PhonemeToMorpheme {
 				cuts[n] = true;
 			}
 			
+			int index = cuts.length-n+1;
+			if (index < cuts.length)
+				_scores[index] += _scores[index];
+//				_scores[index] = Math.max(_scores[index], diff);
+			
 			if (n > m + _maxLen) {
 				m = m + 1;
 				n = m + 1;
@@ -91,6 +104,20 @@ public class PhonemeToMorpheme {
 				
 		return cuts; 
 	}
+	
+	public void setCutPoints(boolean[] _cutPoints) {
+		this._cutPoints = _cutPoints;
+	}
+
+	public boolean[] getCutPoints() {
+		return _cutPoints;
+	}
+	
+	public double[] getScores() {
+		return _scores;
+	}
+	
+	
 	
 	public static void main(String[] args) {
 //		Corpus c = Corpus.autoLoad("latin-morph", "case");
@@ -109,18 +136,13 @@ public class PhonemeToMorpheme {
 			ptm.runAlgorithm(threshold);
 			
 			System.out.println("THRESHOLD: " + NF.format(threshold));
+			System.out.println(CorpusPrinter.printScores(c, ptm.getScores(), 100));
+			System.out.println(CorpusPrinter.printCuts(c, ptm.getCutPoints(), 100));
+			
 			Evaluator.evaluate(ptm.getCutPoints(), c.getCutPoints()).printResults();
 			//e.printResults();
 		}
 		
 //		CorpusWriter.writeCorpus(c, ptm._cutPoints);
-	}
-
-	public void setCutPoints(boolean[] _cutPoints) {
-		this._cutPoints = _cutPoints;
-	}
-
-	public boolean[] getCutPoints() {
-		return _cutPoints;
 	}
 }

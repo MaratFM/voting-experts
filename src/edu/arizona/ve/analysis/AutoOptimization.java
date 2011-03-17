@@ -1,12 +1,12 @@
 package edu.arizona.ve.analysis;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import edu.arizona.ve.algorithm.EntropyMDL;
+import edu.arizona.ve.algorithm.optimize.GlobalOptimizer;
+import edu.arizona.ve.algorithm.optimize.LocalOptimizer;
 import edu.arizona.ve.api.AutoEngine;
 import edu.arizona.ve.api.Engine;
 import edu.arizona.ve.api.Segmentation;
@@ -15,7 +15,6 @@ import edu.arizona.ve.corpus.Corpus.CorpusType;
 import edu.arizona.ve.evaluation.EvaluationResults;
 import edu.arizona.ve.evaluation.Evaluator;
 import edu.arizona.ve.mdl.MDL;
-import edu.arizona.ve.util.NF;
 
 public class AutoOptimization {
 
@@ -56,10 +55,9 @@ public class AutoOptimization {
 		}
 		assert(cutPointsBVE.length == scores.length);
 
-		EntropyMDL optimizer = new EntropyMDL(corpus, segmentation.windowSize);
-		boolean[] cutPointsBVE2 = optimizer.algorithm2(corpus, cutPointsBVE, scores);
-		boolean[] cutPointsBVE3 = optimizer.algorithm3(corpus, cutPointsBVE);
-		boolean[] cutPointsBVE23 = optimizer.algorithm3(corpus, cutPointsBVE2);
+		boolean[] cutPointsBVE2 = LocalOptimizer.optimize(corpus, cutPointsBVE, scores);
+		boolean[] cutPointsBVE3 = GlobalOptimizer.optimize(corpus, cutPointsBVE);
+		boolean[] cutPointsBVE23 = GlobalOptimizer.optimize(corpus, cutPointsBVE2);
 
 		assert(!Arrays.equals(cutPointsBVE, cutPointsBVE2));
 		assert(!Arrays.equals(cutPointsBVE, cutPointsBVE3));
@@ -79,53 +77,29 @@ public class AutoOptimization {
 			String path = wd + "/" + "results/" + Corpus.getFolder(corpus.getType())
 				+ "/BVEOptimized-" + corpus.getName() + ".txt";
 
-			BufferedWriter out = new BufferedWriter(new FileWriter(path));
+			PrintStream out = new PrintStream(path);
 
-			out.write("***************** WinLen: " + segmentation.windowSize + " *****************\n\n");
+			out.print("***************** WinLen: " + segmentation.windowSize + " *****************\n\n");
 			
-			out.write("- BVE -\n");
-			out.write("MDL: " + MDL.computeDescriptionLength(corpus, cutPointsBVE) + "\n");
-			out.write("B-F: " + resultsBVE.boundaryF1() + "\n");
-		    out.write(NF.format(resultsBVE.boundaryPrecision) + "\t"
-		    		+ NF.format(resultsBVE.boundaryRecall) + "\t"
-		    		+ NF.format(resultsBVE.boundaryF1()) + "\t");
-		    out.write(NF.format(resultsBVE.chunkPrecision) + "\t"
-		    		+ NF.format(resultsBVE.chunkRecall) + "\t"
-		    		+ NF.format(resultsBVE.chunkF1()) + "\n");
-		    out.write("\n");
+			out.print("- BVE -\n");
+			out.print("MDL: " + MDL.computeDescriptionLength(corpus, cutPointsBVE) + "\n");
+			out.print("B-F: " + resultsBVE.boundaryF1() + "\n");
+			resultsBVE.printResults(out);
 
-			out.write("- BVE + Optimization 2 -\n");
-			out.write("MDL: " + MDL.computeDescriptionLength(corpus, cutPointsBVE2) + "\n");
-			out.write("B-F: " + resultsBVE2.boundaryF1() + "\n");
-		    out.write(NF.format(resultsBVE2.boundaryPrecision) + "\t"
-		    		+ NF.format(resultsBVE2.boundaryRecall) + "\t"
-		    		+ NF.format(resultsBVE2.boundaryF1()) + "\t");
-		    out.write(NF.format(resultsBVE2.chunkPrecision) + "\t"
-		    		+ NF.format(resultsBVE2.chunkRecall) + "\t"
-		    		+ NF.format(resultsBVE2.chunkF1()) + "\n");
-		    out.write("\n");
+			out.print("- BVE + Optimization 2 -\n");
+			out.print("MDL: " + MDL.computeDescriptionLength(corpus, cutPointsBVE2) + "\n");
+			out.print("B-F: " + resultsBVE2.boundaryF1() + "\n");
+			resultsBVE2.printResults(out);
 
-			out.write("- BVE + Optimization 2 & 3 -\n");
-			out.write("MDL: " + MDL.computeDescriptionLength(corpus, cutPointsBVE23) + "\n");
-			out.write("B-F: " + resultsBVE23.boundaryF1() + "\n");
-		    out.write(NF.format(resultsBVE23.boundaryPrecision) + "\t"
-		    		+ NF.format(resultsBVE23.boundaryRecall) + "\t"
-		    		+ NF.format(resultsBVE23.boundaryF1()) + "\t");
-		    out.write(NF.format(resultsBVE23.chunkPrecision) + "\t"
-		    		+ NF.format(resultsBVE23.chunkRecall) + "\t"
-		    		+ NF.format(resultsBVE23.chunkF1()) + "\n");
-		    out.write("\n");
+			out.print("- BVE + Optimization 2 & 3 -\n");
+			out.print("MDL: " + MDL.computeDescriptionLength(corpus, cutPointsBVE23) + "\n");
+			out.print("B-F: " + resultsBVE23.boundaryF1() + "\n");
+			resultsBVE23.printResults(out);
 
-			out.write("- BVE + Optimization 3 -\n");
-			out.write("MDL: " + MDL.computeDescriptionLength(corpus, cutPointsBVE3) + "\n");
-			out.write("B-F: " + resultsBVE3.boundaryF1() + "\n");
-		    out.write(NF.format(resultsBVE3.boundaryPrecision) + "\t"
-		    		+ NF.format(resultsBVE3.boundaryRecall) + "\t"
-		    		+ NF.format(resultsBVE3.boundaryF1()) + "\t");
-		    out.write(NF.format(resultsBVE3.chunkPrecision) + "\t"
-		    		+ NF.format(resultsBVE3.chunkRecall) + "\t"
-		    		+ NF.format(resultsBVE3.chunkF1()) + "\n");
-		    out.write("\n");
+			out.print("- BVE + Optimization 3 -\n");
+			out.print("MDL: " + MDL.computeDescriptionLength(corpus, cutPointsBVE3) + "\n");
+			out.print("B-F: " + resultsBVE3.boundaryF1() + "\n");
+		    resultsBVE3.printResults(out);
 			
 			out.close();
 		} catch (Exception ex) {

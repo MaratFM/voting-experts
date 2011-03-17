@@ -28,13 +28,16 @@ public class VotingExperts {
 	
 	// Locals
 	protected List<String> _corpus;
-	protected List<Boolean> _cutPoints;
+//	protected List<Boolean> _cutPoints;
+	protected boolean[] _cutPoints;
 	
 	protected int _windowSize;
 	protected int _threshold;
 	
 	protected HashMap<Expert,Integer> _experts = new HashMap<Expert,Integer>();
-	protected int[] _vote;
+	protected int[] _votes;
+	
+	protected double[] _scores;
 	
 	// Constructors
 	public VotingExperts(Corpus c, int windowSize, int threshold) {
@@ -55,65 +58,76 @@ public class VotingExperts {
 	
 	// The Algorithm
 	public void runAlgorithm(boolean uselocalMax) { 
+		// This has been moved to a helper function to enable optimization
+		// of other code
+		vote();
+
+		// cutPoints will be either true or false depending on whether
+		// you choose to cut there (what else would that mean?)		
+		makeCutPoints(uselocalMax);
+	}
+	
+	public int[] vote() {
 		int numCutPoints = _corpus.size() - 1;
 
-		_vote = new int[numCutPoints];
+		_votes = new int[numCutPoints];
+		_scores = new double[numCutPoints];
 		
 		for (int i = 0; i <= numCutPoints - _windowSize + 1; ++i) {
 			List<String> subSequence = Collections.unmodifiableList(_corpus.subList(i, i + _windowSize));
 
 			for (Expert expert : _experts.keySet()) {
 				boolean[] votePoints = expert.segment(subSequence);
+				double[] localScores = expert.getScores();
 				for (int j = 0; j < votePoints.length; j++) {
-					if (votePoints[j]) {
-						int index = j + i - 1;
-						if (index > 0 && index < numCutPoints) {
-							_vote[index] += _experts.get(expert);
+					int index = j + i - 1;
+					if (index > 0 && index < numCutPoints) {
+						if (votePoints[j]) {
+							_votes[index] += _experts.get(expert);
+						}
+						if (localScores != null) {
+							_scores[index] += _experts.get(expert) * localScores[j];
 						}
 					}
 				}
-			}
-		}
-
-		// cutPoints will be either true or false depending on whether
-		// you choose to cut there (what else would that mean?)		
-		makeCutPoints(numCutPoints, uselocalMax);
-	}
-	
-	public void makeCutPoints(int numCutPoints, boolean useLocalMax) {
-		_cutPoints = new ArrayList<Boolean>();
-		for (int i = 0; i < numCutPoints; ++i) { 
-			if (_vote[i] > _threshold) {
-				if (!useLocalMax) { // automatically add the cut, don't check against neighbors
-					_cutPoints.add(true);
-				} else {
-					if (i + 1 == numCutPoints) { // can't check next location because we're at the end
-						if (_vote[i] > _vote[i-1]) {
-							_cutPoints.add(true);
-						} else {
-							_cutPoints.add(false);
-						}
-					} else if (i == 0) { // can't check previous location because we're at the beginning
-						if (_vote[i] > _vote[i+1]) {
-							_cutPoints.add(true);
-						} else {
-							_cutPoints.add(false);
-						}
-					} else if (_vote[i] > _vote[i-1] && _vote[i] > _vote[i+1]) { // in the middle we can check both sides
-						_cutPoints.add(true);
-					} else { // local max checks failed, so it's not a boundary
-						_cutPoints.add(false);
-					}
-				}
-			} else {
-				_cutPoints.add(false);
 			}
 		}
 		
-		// sanity check
-		if (_cutPoints.size() != _corpus.size() - 1) {
-			System.out.println("ERROR: VE produced the wrong number of cut points");
+		return _votes;
+	}
+	
+	public boolean[] makeCutPoints(boolean useLocalMax) {
+		_cutPoints = new boolean[_corpus.size() - 1];
+		
+		for (int i = 0; i < _cutPoints.length; ++i) { 
+			if (_votes[i] > _threshold) {
+				if (!useLocalMax) { // automatically add the cut, don't check against neighbors
+					_cutPoints[i] = true;
+				} else {
+					if (i + 1 == _cutPoints.length) { // can't check next location because we're at the end
+						if (_votes[i] > _votes[i-1]) {
+							_cutPoints[i] = true;
+						} else {
+							_cutPoints[i] = false;
+						}
+					} else if (i == 0) { // can't check previous location because we're at the beginning
+						if (_votes[i] > _votes[i+1]) {
+							_cutPoints[i] = true;
+						} else {
+							_cutPoints[i] = false;
+						}
+					} else if (_votes[i] > _votes[i-1] && _votes[i] > _votes[i+1]) { // in the middle we can check both sides
+						_cutPoints[i] = true;
+					} else { // local max checks failed, so it's not a boundary
+						_cutPoints[i] = false;
+					}
+				}
+			} else {
+				_cutPoints[i] = false;
+			}
 		}
+		
+		return _cutPoints;
 	}
 
 	// Getters and setters
@@ -121,21 +135,26 @@ public class VotingExperts {
 		_corpus = newCorpus;
 	}
 
-	public List<Boolean> getCutPoints() {
+	public boolean[] getCutPoints() {
 		return _cutPoints;
 	}
 
 	public int[] getVotes() {
-		return _vote;
+		return _votes;
 	}
 	
+	public double[] getScores() {
+		return _scores;
+	}
+	
+	// TODO Remove because this is now redundant
 	public String getVoteString(int length) {
 		String result = new String();
 		
 		for (int i = 0; i < length; i++) {
 			result += _corpus.get(i);
-			if (i < _vote.length)
-				result += _vote[i];	
+			if (i < _votes.length)
+				result += _votes[i];	
 		}
 		
 		return result;
@@ -146,8 +165,8 @@ public class VotingExperts {
 		
 		for (int i = 0; i < length; i++) {
 			result += _corpus.get(i);
-			if (i < _vote.length) {
-				if (_vote[i] > threshold) { 
+			if (i < _votes.length) {
+				if (_votes[i] > threshold) { 
 					result += "|";	
 				}
 			}
@@ -160,7 +179,7 @@ public class VotingExperts {
 		Set<List<String>> segments = new HashSet<List<String>>();
 		List<String> segment = new ArrayList<String>();
 		for (int i = 0; i < _corpus.size(); i++) {
-			if (i < _cutPoints.size() && _cutPoints.get(i)) {
+			if (i < _cutPoints.length && _cutPoints[i]) {
 				segment.add(_corpus.get(i));
 				segments.add(segment);
 				segment = new ArrayList<String>();

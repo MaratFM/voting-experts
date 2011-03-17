@@ -10,7 +10,7 @@ import edu.arizona.ve.trie.Trie;
 */
 public class SurprisalExpert extends Expert {
 
-	// What I've been calling "Internal Entropy" is more properly called "Surprisal"
+	// This is the "Internal Entropy" expert
 	public SurprisalExpert(Trie trie) {
 		super(trie);
 	}
@@ -18,7 +18,7 @@ public class SurprisalExpert extends Expert {
 	public boolean[] segment(List<String> segment) {
 		int cutSize = segment.size() + 1;
 		
-		double[] scoreIEnt = new double[cutSize];
+		_scores = new double[cutSize];
 		boolean[] votes = new boolean[cutSize];
 		
 		List<String> seg1, seg2;
@@ -26,16 +26,16 @@ public class SurprisalExpert extends Expert {
 			seg1 = segment.subList(0,i);
 			seg2 = segment.subList(i, segment.size());
 			
-			scoreIEnt[i] = _trie.getStdIntEntropy(seg1) + _trie.getStdIntEntropy(seg2);
+			_scores[i] = _trie.getStdIntEntropy(seg1) + _trie.getStdIntEntropy(seg2);
 		}
 
-		scoreIEnt[segment.size()] = _trie.getStdIntEntropy(segment);
+		_scores[segment.size()] = _trie.getStdIntEntropy(segment);
 
 		int cutFreq = 1;
 		double min = Double.MAX_VALUE;
 		for (int i = 1; i <= segment.size(); ++i) {
-			if (scoreIEnt[i] <= min) {
-				min = scoreIEnt[i];
+			if (_scores[i] <= min) {
+				min = _scores[i];
 				cutFreq = i;
 			}
 		}
@@ -43,6 +43,15 @@ public class SurprisalExpert extends Expert {
 		votes[cutFreq] = true;
 		
 		return votes;
+	}
+
+	@Override
+	public double[] getScores() {
+		double[] posScores = new double[_scores.length];
+		for (int i = 0; i < posScores.length; i++) {
+			posScores[i] = -_scores[i];
+		}
+		return posScores;
 	}
 
 }

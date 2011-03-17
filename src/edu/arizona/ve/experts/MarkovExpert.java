@@ -131,4 +131,10 @@ public class MarkovExpert extends Expert {
 		return votes;
 	}
 
+	@Override
+	public double[] getScores() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

@@ -30,8 +30,7 @@ public class ChunkinessTest {
 		VotingExperts ve = VotingExperts.makeChunkVE(corpus, forward, backward, windowSize, chunkThreshold);
 		
 		ve.runAlgorithm(false);
-		List<Boolean> cutPoints = ve.getCutPoints();
-		boolean[] veCuts = Utils.makeArray(cutPoints);
+		boolean[] veCuts = ve.getCutPoints();
 		
 		System.out.println("Chunkiness Expert:");
 		EvaluationResults results = Evaluator.evaluate(veCuts, corpus.getCutPoints());
@@ -40,8 +39,7 @@ public class ChunkinessTest {
 		// OmniVE for Reference 
 		VotingExperts ref = VotingExperts.makeOmniVE(corpus, forward, backward, windowSize, refThreshold);
 		ref.runAlgorithm(true);
-		List<Boolean> cutPointsRef = ref.getCutPoints();
-		boolean[] refCuts = Utils.makeArray(cutPointsRef);
+		boolean[] refCuts = ref.getCutPoints();
 		
 		System.out.println("\nReference BidiVE:");
 		EvaluationResults refResults = Evaluator.evaluate(refCuts, corpus.getCutPoints());

@@ -1,18 +1,15 @@
 package edu.arizona.ve.api;
 
 import java.util.List;
-import java.util.Vector;
 
 import edu.arizona.ve.algorithm.VotingExperts;
 import edu.arizona.ve.api.Segmentation.Direction;
 import edu.arizona.ve.corpus.Corpus;
 import edu.arizona.ve.corpus.Corpus.CorpusType;
-import edu.arizona.ve.corpus.CorpusWriter;
 import edu.arizona.ve.evaluation.EvaluationResults;
 import edu.arizona.ve.evaluation.Evaluator;
 import edu.arizona.ve.mdl.MDL;
 import edu.arizona.ve.trie.Trie;
-import edu.arizona.ve.util.Utils;
 
 /**
 * @author Daniel Hewlett
@@ -100,41 +97,41 @@ public class Engine {
 		return result;
 	}
 	
-	public List<Segmentation> voteBVEMDL(int window, boolean bidiBVE) {
-		int startThreshold = (window * (bidiBVE ? 3 : 2)) - 1; // window + thresholdOffset 
-		
-		forwardKnowledgeTrie = corpus.makeForwardTrie(window);
-		
-		Segmentation localMaxOn = votePartial(window, startThreshold, true, bidiBVE);
-		Segmentation localMaxOff = votePartial(window, startThreshold, false, bidiBVE);
-		
-		Vector<Segmentation> segmentations = new Vector<Segmentation>();
-		for (int threshold = startThreshold - 1; threshold >= 0; threshold-- ) {
-			Trie knowledgeTrieOn = corpus.makeKnowledgeTrie(window, localMaxOn.cutPoints);
-			Trie knowledgeTrieOff = corpus.makeKnowledgeTrie(window, localMaxOff.cutPoints);
-			
-			localMaxOn = votePartial(window, threshold, true, bidiBVE, knowledgeTrieOn);
-			localMaxOff = votePartial(window, threshold, false, bidiBVE, knowledgeTrieOff);
-
-			segmentations.add(localMaxOn);
-			segmentations.add(localMaxOff);
-		}
-		
-		return segmentations;
-	}
+//	public List<Segmentation> voteBVEMDL(int window, boolean bidiBVE) {
+//		int startThreshold = (window * (bidiBVE ? 3 : 2)) - 1; // window + thresholdOffset 
+//		
+//		forwardKnowledgeTrie = corpus.makeForwardTrie(window);
+//		
+//		Segmentation localMaxOn = votePartial(window, startThreshold, true, bidiBVE);
+//		Segmentation localMaxOff = votePartial(window, startThreshold, false, bidiBVE);
+//		
+//		Vector<Segmentation> segmentations = new Vector<Segmentation>();
+//		for (int threshold = startThreshold - 1; threshold >= 0; threshold-- ) {
+//			Trie knowledgeTrieOn = corpus.makeKnowledgeTrie(window, localMaxOn.cutPoints);
+//			Trie knowledgeTrieOff = corpus.makeKnowledgeTrie(window, localMaxOff.cutPoints);
+//			
+//			localMaxOn = votePartial(window, threshold, true, bidiBVE, knowledgeTrieOn);
+//			localMaxOff = votePartial(window, threshold, false, bidiBVE, knowledgeTrieOff);
+//
+//			segmentations.add(localMaxOn);
+//			segmentations.add(localMaxOff);
+//		}
+//		
+//		return segmentations;
+//	}
 	
 	// TODO: What is the difference between this and voteKnowledgeTransfer
-	public Segmentation voteTransfer(Corpus newCorpus, int window, int threshold, boolean useLocalMax) {
-		setCorpus(newCorpus);
-		return votePartial(window, threshold, useLocalMax, false);
-	}
+//	public Segmentation voteTransfer(Corpus newCorpus, int window, int threshold, boolean useLocalMax) {
+//		setCorpus(newCorpus);
+//		return votePartial(window, threshold, useLocalMax, false);
+//	}
 	
 	public Segmentation voteForward(int windowSize, int threshold, boolean useLocalMax) {
 		VotingExperts ve = VotingExperts.makeForwardVE(corpus, forwardTrie, windowSize, threshold);
 	    ve.runAlgorithm(useLocalMax);
 	    
 	    Segmentation s = new Segmentation(windowSize, threshold);
-	    s.cutPoints = Utils.makeArray(ve.getCutPoints());
+	    s.cutPoints = ve.getCutPoints();
 	    s.localMax = useLocalMax;
 	    s.descriptionLength = MDL.computeDescriptionLength(corpus, s.cutPoints);
 
@@ -148,7 +145,7 @@ public class Engine {
 	    ve.runAlgorithm(useLocalMax);
 	    
 	    Segmentation s = new Segmentation(windowSize, threshold);
-	    s.cutPoints = Utils.makeArray(ve.getCutPoints());
+	    s.cutPoints = ve.getCutPoints();
 	    s.localMax = useLocalMax;
 	    s.descriptionLength = MDL.computeDescriptionLength(corpus, s.cutPoints);
 
@@ -160,95 +157,95 @@ public class Engine {
 	    return s;
 	}
 	
-	public List<Segmentation> bidiVoteAllThresholds(int windowSize, int minThreshold, int maxThreshold) {
-		Vector<Segmentation> segmentations = new Vector<Segmentation>();
-		VotingExperts ve = VotingExperts.makeBidiVE(corpus, forwardTrie, backwardTrie, windowSize, minThreshold);
-		for (int t = minThreshold; t < maxThreshold; t++) {
-			ve.setThreshold(t);
-			
-			ve.runAlgorithm(false);
-			
-			Segmentation maxOff = new Segmentation();
-			maxOff.windowSize = windowSize;
-			maxOff.threshold = t;
-			maxOff.localMax = false;
-			maxOff.cutPoints = Utils.makeArray(ve.getCutPoints());
-			maxOff.descriptionLength = MDL.computeDescriptionLength(corpus, maxOff.cutPoints);
-			segmentations.add(maxOff);
-			
-			ve.makeCutPoints(ve.getCutPoints().size(), true);
-			
-			Segmentation maxOn = new Segmentation();
-			maxOn.windowSize = windowSize;
-			maxOn.threshold = t;
-			maxOn.localMax = true;
-			maxOn.cutPoints = Utils.makeArray(ve.getCutPoints());
-			maxOn.descriptionLength = MDL.computeDescriptionLength(corpus, maxOn.cutPoints);
-			
-			segmentations.add(maxOn);
-		}
-		return segmentations;
-	}
+//	public List<Segmentation> bidiVoteAllThresholds(int windowSize, int minThreshold, int maxThreshold) {
+//		Vector<Segmentation> segmentations = new Vector<Segmentation>();
+//		VotingExperts ve = VotingExperts.makeBidiVE(corpus, forwardTrie, backwardTrie, windowSize, minThreshold);
+//		for (int t = minThreshold; t < maxThreshold; t++) {
+//			ve.setThreshold(t);
+//			
+//			ve.runAlgorithm(false);
+//			
+//			Segmentation maxOff = new Segmentation();
+//			maxOff.windowSize = windowSize;
+//			maxOff.threshold = t;
+//			maxOff.localMax = false;
+//			maxOff.cutPoints = ve.getCutPoints();
+//			maxOff.descriptionLength = MDL.computeDescriptionLength(corpus, maxOff.cutPoints);
+//			segmentations.add(maxOff);
+//			
+//			ve.makeCutPoints(true);
+//			
+//			Segmentation maxOn = new Segmentation();
+//			maxOn.windowSize = windowSize;
+//			maxOn.threshold = t;
+//			maxOn.localMax = true;
+//			maxOn.cutPoints = ve.getCutPoints();
+//			maxOn.descriptionLength = MDL.computeDescriptionLength(corpus, maxOn.cutPoints);
+//			
+//			segmentations.add(maxOn);
+//		}
+//		return segmentations;
+//	}
 	
-	public List<Segmentation> voteAllThresholds(int windowSize, int minThreshold, int maxThreshold) {
-		Vector<Segmentation> segmentations = new Vector<Segmentation>();
-		VotingExperts ve = VotingExperts.makeForwardVE(corpus, forwardTrie, windowSize, minThreshold); 
-		for (int t = minThreshold; t < maxThreshold; t++) {
-
-			ve.setThreshold(t);
-			
-			// Local Max OFF
-			ve.runAlgorithm(false);
-			
-			Segmentation maxOff = new Segmentation();
-			maxOff.windowSize = windowSize;
-			maxOff.threshold = t;
-			maxOff.localMax = false;
-			maxOff.cutPoints = Utils.makeArray(ve.getCutPoints());
-			maxOff.descriptionLength = MDL.computeDescriptionLength(corpus, maxOff.cutPoints);
-			segmentations.add(maxOff);
-			
-			// Local Max ON
-			ve.makeCutPoints(ve.getCutPoints().size(), true);
-			
-			Segmentation maxOn = new Segmentation();
-			maxOn.windowSize = windowSize;
-			maxOn.threshold = t;
-			maxOn.localMax = true;
-			maxOn.cutPoints = Utils.makeArray(ve.getCutPoints());
-			maxOn.descriptionLength = MDL.computeDescriptionLength(corpus, maxOn.cutPoints);
-			
-			segmentations.add(maxOn);
-		}
-		return segmentations;
-	}
+//	public List<Segmentation> voteAllThresholds(int windowSize, int minThreshold, int maxThreshold) {
+//		Vector<Segmentation> segmentations = new Vector<Segmentation>();
+//		VotingExperts ve = VotingExperts.makeForwardVE(corpus, forwardTrie, windowSize, minThreshold); 
+//		for (int t = minThreshold; t < maxThreshold; t++) {
+//
+//			ve.setThreshold(t);
+//			
+//			// Local Max OFF
+//			ve.runAlgorithm(false);
+//			
+//			Segmentation maxOff = new Segmentation();
+//			maxOff.windowSize = windowSize;
+//			maxOff.threshold = t;
+//			maxOff.localMax = false;
+//			maxOff.cutPoints = Utils.makeArray(ve.getCutPoints());
+//			maxOff.descriptionLength = MDL.computeDescriptionLength(corpus, maxOff.cutPoints);
+//			segmentations.add(maxOff);
+//			
+//			// Local Max ON
+//			ve.makeCutPoints(ve.getCutPoints().size(), true);
+//			
+//			Segmentation maxOn = new Segmentation();
+//			maxOn.windowSize = windowSize;
+//			maxOn.threshold = t;
+//			maxOn.localMax = true;
+//			maxOn.cutPoints = Utils.makeArray(ve.getCutPoints());
+//			maxOn.descriptionLength = MDL.computeDescriptionLength(corpus, maxOn.cutPoints);
+//			
+//			segmentations.add(maxOn);
+//		}
+//		return segmentations;
+//	}
 	
-	public Segmentation votePartial(int windowSize, int threshold, boolean useLocalMax, boolean bidi, Trie kTrie) {
-	    VotingExperts pve; // NOTE: Be careful!
-	    if (bidi) {
-	    	pve = VotingExperts.makeBidiBVE(corpus, forwardTrie, backwardTrie, kTrie, windowSize, threshold);
-	    } else {
-	    	pve = VotingExperts.makeBVE(corpus, forwardTrie, kTrie, windowSize, threshold);
-	    }
-	    pve.runAlgorithm(useLocalMax);
-	    
-	    Segmentation s = new Segmentation(windowSize, threshold);
-	    s.cutPoints = Utils.makeArray(pve.getCutPoints());
-	    s.localMax = useLocalMax;
-	    s.descriptionLength = MDL.computeDescriptionLength(corpus, s.cutPoints);
-	    s.votes = pve.getVotes();
-	    
-	    partialSegmentation = s;
-	    
-	    if (DEBUG) {
-//	    	System.out.println();
-		    System.out.println(pve.getVoteString(100));
-		    System.out.println(pve.getSegmentedString(100, threshold));
-//		    System.out.println(s.descriptionLength);
-	    }
-	    
-	    return s;
-	}
+//	public Segmentation votePartial(int windowSize, int threshold, boolean useLocalMax, boolean bidi, Trie kTrie) {
+//	    VotingExperts pve; // NOTE: Be careful!
+//	    if (bidi) {
+//	    	pve = VotingExperts.makeBidiBVE(corpus, forwardTrie, backwardTrie, kTrie, windowSize, threshold);
+//	    } else {
+//	    	pve = VotingExperts.makeBVE(corpus, forwardTrie, kTrie, windowSize, threshold);
+//	    }
+//	    pve.runAlgorithm(useLocalMax);
+//	    
+//	    Segmentation s = new Segmentation(windowSize, threshold);
+//	    s.cutPoints = Utils.makeArray(pve.getCutPoints());
+//	    s.localMax = useLocalMax;
+//	    s.descriptionLength = MDL.computeDescriptionLength(corpus, s.cutPoints);
+//	    s.votes = pve.getVotes();
+//	    
+//	    partialSegmentation = s;
+//	    
+//	    if (DEBUG) {
+////	    	System.out.println();
+//		    System.out.println(pve.getVoteString(100));
+//		    System.out.println(pve.getSegmentedString(100, threshold));
+////		    System.out.println(s.descriptionLength);
+//	    }
+//	    
+//	    return s;
+//	}
 	
 	public Segmentation votePartial(int windowSize, int threshold, boolean useLocalMax, boolean bidi) {
 	    VotingExperts pve; // NOTE: Be careful!
@@ -260,7 +257,7 @@ public class Engine {
 	    pve.runAlgorithm(useLocalMax);
 	    
 	    Segmentation s = new Segmentation(windowSize, threshold);
-	    s.cutPoints = Utils.makeArray(pve.getCutPoints());
+	    s.cutPoints = pve.getCutPoints();
 	    s.localMax = useLocalMax;
 	    s.descriptionLength = MDL.computeDescriptionLength(corpus, s.cutPoints);
 	    s.votes = pve.getVotes();
@@ -282,7 +279,7 @@ public class Engine {
 		pve.runAlgorithm(useLocalMax);
 	    
 		Segmentation s = new Segmentation(windowSize, threshold);
-	    s.cutPoints = Utils.makeArray(pve.getCutPoints());
+	    s.cutPoints = pve.getCutPoints();
 	    s.localMax = useLocalMax;
 	    s.descriptionLength = MDL.computeDescriptionLength(corpus, s.cutPoints);
 	    
@@ -298,7 +295,7 @@ public class Engine {
 	    
 	    bidiSegmentation = new Segmentation(windowSize, threshold);
 	    bidiSegmentation.direction = Direction.BiDirectional;
-	    bidiSegmentation.cutPoints = Utils.makeArray(ve.getCutPoints());
+	    bidiSegmentation.cutPoints = ve.getCutPoints();
 	    bidiSegmentation.localMax = useLocalMax;
 	    bidiSegmentation.descriptionLength = MDL.computeDescriptionLength(corpus, bidiSegmentation.cutPoints);
 
@@ -313,7 +310,7 @@ public class Engine {
 	    
 	    bidiSegmentation = new Segmentation(windowSize, threshold);
 	    bidiSegmentation.direction = Direction.BiDirectional;
-	    bidiSegmentation.cutPoints = Utils.makeArray(ve.getCutPoints());
+	    bidiSegmentation.cutPoints = ve.getCutPoints();
 	    bidiSegmentation.localMax = useLocalMax;
 	    bidiSegmentation.descriptionLength = MDL.computeDescriptionLength(corpus, bidiSegmentation.cutPoints);
 

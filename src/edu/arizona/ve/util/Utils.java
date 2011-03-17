@@ -181,4 +181,12 @@ public class Utils {
 		Collections.reverse(reversed);
 		return reversed;
 	}
+	
+	public static double[] toDoubleArray(int[] ints) {
+		double[] doubles = new double[ints.length];
+		for (int i = 0; i < ints.length; i++) {
+			doubles[i] = ints[i];
+		}
+		return doubles;
+	}
 }

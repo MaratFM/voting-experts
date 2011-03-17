@@ -25,9 +25,9 @@ public class KnowledgeExpert extends Expert {
 		int cutSize = segment.size() + 1;
 		
 		boolean[] votes = new boolean[cutSize];
-		double[] scorefKnowledge = new double[segment.size()+1];
-		for (int i = 0; i < scorefKnowledge.length; i++) {
-			scorefKnowledge[i] = Double.POSITIVE_INFINITY;
+		_scores = new double[segment.size()+1];
+		for (int i = 0; i < _scores.length; i++) {
+			_scores[i] = Double.POSITIVE_INFINITY;
 		}
 		
 		// Special case for beginning 
@@ -44,11 +44,11 @@ public class KnowledgeExpert extends Expert {
 			// Prior Knowledge 
 			ArrayList<String> segK1 = new ArrayList<String>(seg1); 
 			segK1.add("*");
-			scorefKnowledge[i] = _trie.getStdIntEntropy(segK1);
+			_scores[i] = _trie.getStdIntEntropy(segK1);
 			
 			ArrayList<String> segK2 = new ArrayList<String>(seg2);
 			segK2.add(0, "*");
-			scorefKnowledge[i] += _trie.getStdIntEntropy(segK2);
+			_scores[i] += _trie.getStdIntEntropy(segK2);
 			
 //			System.out.println(scorefKnowledge[i] + " " + segK1 + " || " + segK2);
 		}
@@ -64,9 +64,9 @@ public class KnowledgeExpert extends Expert {
 		int cutfKnowledge = -1;
 
 		// <= ? that should favor pushing the tie to the next item - do we want that?
-		for (int i = 0; i < scorefKnowledge.length; ++i) {
-			if (scorefKnowledge[i] < minfKnowledgeEnt) {
-				minfKnowledgeEnt = scorefKnowledge[i];
+		for (int i = 0; i < _scores.length; ++i) {
+			if (_scores[i] < minfKnowledgeEnt) {
+				minfKnowledgeEnt = _scores[i];
 				cutfKnowledge = i;
 			}
 		}
@@ -78,6 +78,19 @@ public class KnowledgeExpert extends Expert {
 		}
 		
 		return votes;
+	}
+
+	@Override
+	public double[] getScores() {
+		double[] posScores = new double[_scores.length];
+		for (int i = 0; i < posScores.length; i++) {
+			if (Double.isInfinite(_scores[i])) {
+				posScores[i] = 0;
+			} else {
+				posScores[i] = -_scores[i];
+			}
+		}
+		return posScores;
 	}
 
 }

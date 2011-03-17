@@ -16,10 +16,8 @@ import edu.arizona.ve.util.Printer;
  */
 public class StatNode {
    
-	// trying to phase this out
    public ArrayList<Double> frequencies;
-   public ArrayList<Double> internalEntropies;
-   
+   public ArrayList<Double> surprisals;
    public ArrayList<Double> boundaryEntropies;
    
    public double n;
@@ -40,7 +38,7 @@ public class StatNode {
    public StatNode() {
       frequencies = new ArrayList<Double>();
       boundaryEntropies = new ArrayList<Double>();
-      internalEntropies = new ArrayList<Double>();
+      surprisals = new ArrayList<Double>();
    }
    
    public void calculate() {
@@ -56,7 +54,7 @@ public class StatNode {
       
       for (int i = 0; i < n; ++i) {
          meanFreq += ((Double) frequencies.get(i)).doubleValue();
-         meanIntEnt += internalEntropies.get(i).doubleValue();
+         meanIntEnt += surprisals.get(i).doubleValue();
          meanEnt += ((Double) boundaryEntropies.get(i)).doubleValue();
       }
       
@@ -74,7 +72,7 @@ public class StatNode {
          double freq = ((Double) frequencies.get(i)).doubleValue();
          varFreq += (freq - meanFreq)*(freq - meanFreq);
          
-         double intEnt = internalEntropies.get(i).doubleValue();
+         double intEnt = surprisals.get(i).doubleValue();
          varIntEnt += Math.pow(intEnt - meanIntEnt, 2);
          
          double ent  = ((Double) boundaryEntropies.get(i)).doubleValue();

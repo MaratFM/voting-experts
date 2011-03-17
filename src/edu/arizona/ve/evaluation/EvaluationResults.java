@@ -1,5 +1,7 @@
 package edu.arizona.ve.evaluation;
 
+import java.io.PrintStream;
+
 import edu.arizona.ve.util.NF;
 
 public class EvaluationResults {
@@ -24,11 +26,17 @@ public class EvaluationResults {
 	}
 	
    public void printResults() {
-//	   System.out.println("VE Number of Chunks:     " + estimatedChunkCount);
-//	   System.out.println("Actual Number of Chunks: " + actualChunkCount);
-	   System.out.println("BP\tBR\tBF\tWP\tWR\tWF");
-	   System.out.print(NF.format(boundaryPrecision) + "\t" + NF.format(boundaryRecall) + "\t" + NF.format(boundaryF1()) + "\t");
-	   System.out.print(NF.format(chunkPrecision) + "\t" + NF.format(chunkRecall) + "\t" + NF.format(chunkF1()));
-	   System.out.println();
+	   printResults(System.out);
+   }
+   
+   public void printResults(PrintStream out) {
+	   out.println("BP\tBR\tBF\tWP\tWR\tWF");
+	   out.print(NF.format(boundaryPrecision) + "\t" + NF.format(boundaryRecall) + "\t" + NF.format(boundaryF1()) + "\t");
+	   out.print(NF.format(chunkPrecision) + "\t" + NF.format(chunkRecall) + "\t" + NF.format(chunkF1()));
+	   out.println();
+	   out.println("LATEX:");
+	   out.println(NF.format(boundaryPrecision) + " & " + NF.format(boundaryRecall) + " & " + NF.format(boundaryF1()) + 
+			   	   " & " + NF.format(chunkPrecision) + " & " + NF.format(chunkRecall) + " & " + NF.format(chunkF1()) + " \\\\ ");
+	   out.println();
    }
 }

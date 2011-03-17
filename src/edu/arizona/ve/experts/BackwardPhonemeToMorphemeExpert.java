@@ -47,4 +47,10 @@ public class BackwardPhonemeToMorphemeExpert extends Expert {
 		return cuts;
 	}
 
+	@Override
+	public double[] getScores() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

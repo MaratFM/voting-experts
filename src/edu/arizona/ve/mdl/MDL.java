@@ -3,7 +3,7 @@ package edu.arizona.ve.mdl;
 import java.util.HashMap;
 import java.util.List;
 
-import edu.arizona.ve.algorithm.EntropyMDL.Model;
+import edu.arizona.ve.algorithm.optimize.Model;
 import edu.arizona.ve.corpus.Corpus;
 import edu.arizona.ve.corpus.Corpus.CorpusType;
 import edu.arizona.ve.util.NF;

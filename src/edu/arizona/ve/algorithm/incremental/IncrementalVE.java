@@ -39,7 +39,7 @@ public class IncrementalVE implements IncrementalAlgorithm {
 		ve.runAlgorithm(false);
 		
 		String segmented = new String();
-		for (List<String> seg : cl.getSegments(Utils.makeArray(ve.getCutPoints()))) {
+		for (List<String> seg : cl.getSegments(ve.getCutPoints())) {
 			for (String c : seg) { segmented += c; }
 			segmented += " ";
 		}

@@ -23,8 +23,6 @@ public class Corpus {
 	private List<String> cleanChars = new ArrayList<String>();
 	private List<String> segChars = new ArrayList<String>();
 	
-	private List<List<String>> segments; // TODO: this should probably go away
-	
 	private boolean[] cutPoints;
 	private String name = "CORPUS";
 	
@@ -574,33 +572,6 @@ public class Corpus {
 		Corpus subCorpus = Corpus.fromList(subList);
 		subCorpus.setType(this.getType());
 		return subCorpus;
-	}
-	
-	// The behavior of this function is odd and wrong
-	public void loadSegments(String file) {
-		try {	
-			BufferedReader in = new BufferedReader(new FileReader(file));
-			String corpus = in.readLine().trim();
-			in.close();
-
-			String[] segStrings = corpus.split("[*]");
-
-			segments = new ArrayList<List<String>>();
-			for (String s : segStrings) {
-				cleanChars.add(s);
-				segChars.add(s);
-				ArrayList<String> segment = new ArrayList<String>();
-				for (Character c : s.toCharArray()) { segment.add(c.toString()); }
-				//			   segment.add("*"); // every segment ends with *
-				segments.add(segment);
-			}        
-			
-			cutPoints = new boolean[cleanChars.size()-1];
-
-		} catch (Exception e) {
-			System.out.println("ERROR - " + e.getMessage());
-			e.printStackTrace();
-		}
 	}
 	
 	public Trie makeForwardTrie(int depth) {

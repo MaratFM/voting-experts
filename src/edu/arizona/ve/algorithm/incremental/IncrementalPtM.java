@@ -11,8 +11,8 @@ import edu.arizona.ve.trie.Trie;
 public class IncrementalPtM implements IncrementalAlgorithm {
 	Trie fTrie, bTrie;
 	int trieDepth;
-	int windowSize = 4;
-	double threshold = 0.25;
+	int windowSize = 6;
+	double threshold = 0.75;
 	
 	public IncrementalPtM() {
 		fTrie = new Trie();

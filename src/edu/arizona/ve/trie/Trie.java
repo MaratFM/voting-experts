@@ -1,28 +1,14 @@
 package edu.arizona.ve.trie;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
-
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-
-import org.xml.sax.Attributes;
-import org.xml.sax.InputSource;
-import org.xml.sax.helpers.DefaultHandler;
 
 import edu.arizona.ve.corpus.Corpus;
 import edu.arizona.ve.util.NF;
-import edu.arizona.ve.util.Printer;
 import edu.arizona.ve.util.Utils;
 /**
  *
@@ -185,7 +171,7 @@ public class Trie {
 		if (prefix != null && !prefix.isEmpty()) {
 			StatNode stat = (StatNode) stats.get(new Integer(prefix.size()));
 			stat.frequencies.add(new Double(freq));
-			stat.internalEntropies.add(internalEntropy);
+			stat.surprisals.add(internalEntropy);
 			stat.boundaryEntropies.add(new Double(boundaryEntropy));
 		}
 
@@ -358,6 +344,91 @@ public class Trie {
 		return l;
 	}
 
+
+
+	public void levelOrder() {
+		LinkedList<Trie> l = new LinkedList<Trie>();
+		l.add(this);
+		while (l.size() > 0) {
+			Trie curr = l.removeFirst();
+			curr.printData("");
+
+			for (Trie t : curr.children.values()) { 
+				l.addLast(t);
+			}
+		}
+	}
+	
+	public void setFrequency(double freq) { 
+		this.freq = freq;
+	}
+	
+	
+	// STATIC METHODS (old style)
+	
+	/**
+	 * given a set of tokens and a window size make sure to 
+	 * add all of the sets of tokens with the window size
+	 * @param tokens
+	 * @param windowSize
+	 */
+	public static void addAll(Trie root, List<String> tokens, int windowSize) {
+		root.depth = windowSize;
+		
+		for (int i = 0; i < tokens.size(); ++i) { 
+			List<String> tmp = null;
+			if (i+windowSize > tokens.size()) { 
+				tmp = tokens.subList(i, tokens.size());
+			} else { 
+				tmp = tokens.subList(i, i+windowSize);
+			}
+			
+			root.put(tmp, 1);
+		}		
+	}
+	
+	public static Trie buildTrie(Corpus c, int depth) {
+		return buildTrie(c.getCleanChars(), depth);
+	}
+	
+	public static Trie buildTrie(List<String> tokens, int depth) {
+		Trie root = new Trie();
+		addAll(root,tokens,depth);
+		root.generateStatistics();
+		return root;
+	}
+	
+	public static Trie buildBackwardTrie(Corpus c, int depth) {
+		return buildBackwardTrie(c.getCleanChars(), depth);
+	}
+	
+	public static Trie buildBackwardTrie(List<String> tokens, int depth) {
+		ArrayList<String> backwardCorpus = new ArrayList<String>(tokens);
+		Collections.reverse(backwardCorpus);
+		return buildTrie(backwardCorpus, depth);
+	}
+	
+	public double getIntEntropy(List<String> sequence) {
+		if (sequence == null || sequence.size() == 0)
+			return internalEntropy;
+
+		String child = sequence.get(0);
+		if (!children.containsKey(child))
+			return 0;
+
+		Trie t = children.get(child);
+		List<String> suffix = sequence.subList(1,sequence.size());
+		return t.getIntEntropy(suffix);
+	}
+	
+	
+	
+	
+	
+	
+	////////////////////////////////////////////
+	// Printing
+	
 	/** 
 	 * print information about the tree
 	 * @param path
@@ -448,188 +519,6 @@ public class Trie {
 		Trie t = children.get(child);
 		t.printExtensions(sequence.subList(1, sequence.size()), all);
 
-	}
-
-	public void levelOrder() {
-		LinkedList<Trie> l = new LinkedList<Trie>();
-		l.add(this);
-		while (l.size() > 0) {
-			Trie curr = l.removeFirst();
-			curr.printData("");
-
-			for (Trie t : curr.children.values()) { 
-				l.addLast(t);
-			}
-		}
-	}
-	
-	public void setFrequency(double freq) { 
-		this.freq = freq;
-	}
-	
-	public void toXML(PrintWriter out) { 
-		out.write("<Trie>\n");
-		
-		LinkedList<Trie> l = new LinkedList<Trie>();
-		l.add(this);
-		while (l.size() > 0) { 
-			Trie curr = l.removeFirst();
-			curr.xmlDetail(out);
-			
-			for (Trie t : curr.children.values()) { 
-				l.addLast(t);
-			}
-		}
-		out.write("</Trie>\n");
-		out.flush();
-	}
-	
-	public void xmlDetail(PrintWriter out) { 
-		out.write("  <TrieNode ");
-		out.write("prefix=\"");
-		Printer.printList(prefix, out);
-		out.write("\" ");
-		out.write("freq=\"" + freq + "\" ");
-		out.write("/>\n");
-	}
-	
-	
-	
-	
-	
-	// STATIC METHODS (old style)
-	
-	/**
-	 * given a set of tokens and a window size make sure to 
-	 * add all of the sets of tokens with the window size
-	 * @param tokens
-	 * @param windowSize
-	 */
-	public static void addAll(Trie root, List<String> tokens, int windowSize) {
-		root.depth = windowSize;
-		
-		for (int i = 0; i < tokens.size(); ++i) { 
-			List<String> tmp = null;
-			if (i+windowSize > tokens.size()) { 
-				tmp = tokens.subList(i, tokens.size());
-			} else { 
-				tmp = tokens.subList(i, i+windowSize);
-			}
-			
-			root.put(tmp, 1);
-		}		
-	}
-	
-	public static Trie buildTrie(Corpus c, int depth) {
-		return buildTrie(c.getCleanChars(), depth);
-	}
-	
-	public static Trie buildTrie(List<String> tokens, int depth) {
-		Trie root = new Trie();
-		addAll(root,tokens,depth);
-		root.generateStatistics();
-		return root;
-	}
-	
-	public static Trie buildBackwardTrie(Corpus c, int depth) {
-		return buildBackwardTrie(c.getCleanChars(), depth);
-	}
-	
-	public static Trie buildBackwardTrie(List<String> tokens, int depth) {
-		ArrayList<String> backwardCorpus = new ArrayList<String>(tokens);
-		Collections.reverse(backwardCorpus);
-		return buildTrie(backwardCorpus, depth);
-	}
-	
-	public static void extractWords(Trie t) {
-		List<String> begin = Arrays.asList(new String[]{"*"});
-		
-		HashMap<String,Integer> wordCounts = new HashMap<String,Integer>();
-		
-		// The sub-trie rooted at "*" - the "lexicon"
-		HashMap<String, Trie> lexicon = t.getChildren(begin);
-		
-		for (Trie subTrie : lexicon.values()) {
-			wordCounts.putAll(subTrie.getWords());
-		}
-		
-		class Holder implements Comparable<Holder> {
-			String word;
-			int count;
-			
-			public int compareTo(Holder o) {
-				return -(new Integer(count).compareTo(o.count));
-			}
-		}
-
-		Vector<Holder> v = new Vector<Holder>();
-		for (Map.Entry<String,Integer> e : wordCounts.entrySet()) {
-			Holder h = new Holder(); h.word = e.getKey().substring(1, e.getKey().length()-1); h.count = e.getValue().intValue();
-			v.add(h);
-		}
-		
-		Collections.sort(v);
-		
-		System.out.println("WORDS! at last.");
-		try {
-			PrintStream out = new PrintStream("lexica/seed.lex");
-			
-			for (Holder h : v) {
-				if (h.count > 50) {
-					out.println(h.word + "\t" + h.count);
-				}
-			}
-			
-			out.close();
-		} catch (FileNotFoundException e1) { e1.printStackTrace(); }
-	}
-	
-	public static void loadFromFile(final Trie root, BufferedReader in) 
-			throws Exception { 
-		try {
-			SAXParserFactory spf = SAXParserFactory.newInstance();
-			spf.setValidating(false);
-			
-			SAXParser sp = spf.newSAXParser();
-			InputSource input = new InputSource(in);
-			sp.parse(input, new DefaultHandler() { 
-				public void startElement(String uri, String localName, String qName, Attributes a) {
-					if (qName.equals("TrieNode")) { 
-						String s = a.getValue("prefix");
-						double freq = Double.parseDouble(a.getValue("freq"));
-
-						if ("".equals(s)) {
-							root.setFrequency(freq);
-						} else { 
-							List<String> list = new LinkedList<String>();
-							String[] sarray = s.split("\\|");
-							for (String str : sarray) 
-								list.add(str);
-
-							// put in the node and make sure to get it back in order
-							// to set it's frequency
-							root.put(list, 0).setFrequency(freq);
-						}
-					}
-				}
-			});
-			
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	public double getIntEntropy(List<String> sequence) {
-		if (sequence == null || sequence.size() == 0)
-			return internalEntropy;
-
-		String child = sequence.get(0);
-		if (!children.containsKey(child))
-			return 0;
-
-		Trie t = children.get(child);
-		List<String> suffix = sequence.subList(1,sequence.size());
-		return t.getIntEntropy(suffix);
 	}
 	
 }
